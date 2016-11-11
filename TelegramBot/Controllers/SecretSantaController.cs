@@ -96,7 +96,7 @@ namespace TelegramBot.Controllers
                         return;
                     }
 
-                    if (santa.Status == Status.Accepted || santa.Status == Status.Quitting)
+                    if (santa.Status == Status.Accepted || santa.Status == Status.ChangeAddress)
                     {
                         if(update.Message.Text.StartsWith("/help"))
                         {

@@ -148,6 +148,10 @@
     <Compile Include="Migrations\201611111147108_initial.Designer.cs">
       <DependentUpon>201611111147108_initial.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201611111429495_multiplerooms.cs" />
+    <Compile Include="Migrations\201611111429495_multiplerooms.Designer.cs">
+      <DependentUpon>201611111429495_multiplerooms.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Room.cs" />
     <Compile Include="Models\Santa.cs" />
@@ -168,6 +172,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Migrations\201611111147108_initial.resx">
       <DependentUpon>201611111147108_initial.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201611111429495_multiplerooms.resx">
+      <DependentUpon>201611111429495_multiplerooms.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

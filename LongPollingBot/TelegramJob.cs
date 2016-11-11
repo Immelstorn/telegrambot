@@ -69,7 +69,8 @@ namespace LongPollingBot
 
                             db.Santas.Add(newSanta);
                             db.SaveChanges();
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Судя по всему ты тут новенький. Введи пароль к существующей комнате или новый пароль для создания новой комнаты.").Wait();
+                            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Судя по всему ты тут новенький.\n С принципиами Secret Santa ты, я надеюсь, знаком.\n Здесь люди объединяются по комнатам с помощью секретного пароля и собираются дарить друг другу подарки.\n").Wait();
+                            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Введи пароль к существующей комнате или новый пароль для создания новой комнаты.").Wait();
                             return;
                         }
 
@@ -125,7 +126,7 @@ namespace LongPollingBot
                             santa.Address = address;
                             santa.Status = Status.Accepted;
                             db.SaveChanges();
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Отлично! Адрес сохранен. 4 декабря я всех перемешаю и пришлю тебе адрес другого человека которому ты должен будешь отправить подарок.").Wait();
+                            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Отлично! Адрес сохранен. 4 декабря я всех перемешаю и пришлю тебе адрес другого человека, которому ты должен будешь отправить подарок.").Wait();
                             return;
                         }
 
@@ -133,7 +134,7 @@ namespace LongPollingBot
                         {
                             if (update.Message.Text.StartsWith("/help"))
                             {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"/help - помощь \n/change - сменить адрес \n/addroom <пароль к комнате> - добавить комнату \n/info - посмотреть свой адрес и комнаты \n/count <пароль к комнате> - узнать количество человек в комнате \n/quit <пароль к комнате> - выйти из игры").Wait();
+                                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"/help - помощь \n/change - сменить адрес \n/addroom <пароль к комнате> - добавить комнату \n/info - посмотреть свой адрес и комнаты, в которых ты находишься \n/count <пароль к комнате> - узнать количество человек в комнате \n/quit <пароль к комнате> - выйти из игры").Wait();
                                 return;
                             }
                             else if (update.Message.Text.StartsWith("/change"))

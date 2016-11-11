@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Configuration;
 using System.Data.Entity;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Http;
@@ -23,7 +24,8 @@ namespace TelegramBot.Controllers
 
         public async Task Post(Update update)
         {
-            Console.WriteLine(update.Message.Text);
+            Trace.TraceInformation(update.Message.Text);
+            Trace.TraceError(update.Message.Text);
             try
             {
                 using(var db = new SecretSantaDbContext())
@@ -219,7 +221,7 @@ namespace TelegramBot.Controllers
             }
             catch(Exception e)
             {
-                Console.WriteLine(e.Message);
+                Trace.TraceError(e.Message);
             }
         }
     }

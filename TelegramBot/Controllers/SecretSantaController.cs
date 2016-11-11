@@ -39,8 +39,7 @@ namespace TelegramBot.Controllers
                         await _bot.SendTextMessageAsync(update.Message.Chat.Id, "Судя по всему ты тут новенький. Введи пароль к существующей комнате или новый пароль для создания новой комнаты.");
                         return;
                     }
-
-                    if(santa.Status == Status.WaitingForPassword)
+                    else if(santa.Status == Status.WaitingForPassword)
                     {
                         var password = update.Message.Text;
                         if(string.IsNullOrEmpty(password) || password.Length < 6)
@@ -68,13 +67,12 @@ namespace TelegramBot.Controllers
                         santa.Room = room;
                         santa.Status = Status.WaitingForAddress;
                         await db.SaveChangesAsync();
-                        var count = await db.Santas.CountAsync(s => s.Room == room);
+                        var count = await db.Santas.CountAsync(s => s.Room.Id == room.Id);
                         await _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Ты добавлен в эту комнату, сейчас тут {count} человек.");
                         await _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пришли свой адрес, на который твой Санта вышлет тебе подарок.");
                         return;
                     }
-
-                    if(santa.Status == Status.WaitingForAddress)
+                    else if(santa.Status == Status.WaitingForAddress)
                     {
                         var address = update.Message.Text;
                         if(string.IsNullOrEmpty(address) || address.Length < 10)
@@ -88,8 +86,7 @@ namespace TelegramBot.Controllers
                         await _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Отлично! Адрес сохранен. 4 декабря я всех перемешаю и пришлю тебе адрес другого человека которому ты должен будешь отправить подарок.");
                         return;
                     }
-
-                    if(santa.Status == Status.Accepted || santa.Status == Status.ChangeAddress || santa.Status == Status.Quitting)
+                    else if(santa.Status == Status.Accepted || santa.Status == Status.ChangeAddress || santa.Status == Status.Quitting)
                     {
                         switch(update.Message.Text)
                         {

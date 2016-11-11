@@ -2,10 +2,10 @@
 {
     public enum Status
     {
-        WaitingForPassword,
-        WaitingForAddress,
-        Accepted,
-        ChangeAddress,
-        Quitting
+        WaitingForPassword = 1,
+        WaitingForAddress = 2,
+        Accepted = 3,
+        ChangeAddress = 4,
+        Quitting = 5
     }
 }

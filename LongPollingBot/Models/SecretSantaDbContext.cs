@@ -1,5 +1,4 @@
 ﻿using System.Data.Entity;
-
 namespace LongPollingBot.Models
 {
     public class SecretSantaDbContext: DbContext

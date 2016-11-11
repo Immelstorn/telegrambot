@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Configuration;
 using System.Data.Entity;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using LongPollingBot.Models;
 
@@ -206,8 +202,12 @@ namespace LongPollingBot
                             }
                             else if (update.Message.Text.StartsWith("/info"))
                             {
-                                var rooms = santa.Rooms.Aggregate(string.Empty, (current, room) => current + $" {room.Password},");
-                                rooms = rooms.Substring(1, rooms.Length - 2);
+                                var rooms = "";
+                                if(santa.Rooms.Any())
+                                {
+                                    rooms = santa.Rooms.Aggregate(string.Empty, (current, room) => current + $" {room.Password},");
+                                    rooms = rooms.Substring(1, rooms.Length - 2);
+                                }
                                 _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Твой текущий адрес - {santa.Address}, твои комнаты: {rooms}").Wait();
                                 return;
                             }

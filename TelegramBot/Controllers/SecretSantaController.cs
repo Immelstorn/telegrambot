@@ -19,6 +19,10 @@ namespace TelegramBot.Controllers
 
         public string Get()
         {
+            Debug.Write("Debug");
+            Trace.TraceInformation("TraceInformation");
+            Trace.TraceError("TraceError");
+            Console.WriteLine("console");
             return "Ok!";
         }
 

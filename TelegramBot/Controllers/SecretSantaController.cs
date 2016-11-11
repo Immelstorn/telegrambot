@@ -113,7 +113,7 @@ namespace TelegramBot.Controllers
                         else if(update.Message.Text.StartsWith("/addroom"))
                         {
                             var password = update.Message.Text.Replace("/addroom ", string.Empty);
-                            if (string.IsNullOrEmpty(password) || password.Length < 6)
+                            if (string.IsNullOrEmpty(password) || update.Message.Text.Equals("/addroom") || password.Length < 6)
                             {
                                 await _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 6 символов.");
                                 return;
@@ -149,6 +149,11 @@ namespace TelegramBot.Controllers
                         else if(update.Message.Text.StartsWith("/count"))
                         {
                             var password = update.Message.Text.Replace("/count ", string.Empty);
+                            if (string.IsNullOrEmpty(password) || update.Message.Text.Equals("/count") || password.Length < 6)
+                            {
+                                await _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 6 символов.");
+                                return;
+                            }
                             var room = await db.Rooms.FirstOrDefaultAsync(r => r.Password.Equals(password));
                             if(room == null)
                             {
@@ -170,6 +175,11 @@ namespace TelegramBot.Controllers
                         else if(update.Message.Text.StartsWith("/quit"))
                         {
                             var password = update.Message.Text.Replace("/quit ", string.Empty);
+                            if (string.IsNullOrEmpty(password) || update.Message.Text.Equals("/quit") || password.Length < 6)
+                            {
+                                await _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 6 символов.");
+                                return;
+                            }
                             var room = await db.Rooms.FirstOrDefaultAsync(r => r.Password.Equals(password));
                             if (room == null || santa.Rooms.All(r => r.Id != room.Id))
                             {

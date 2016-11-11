@@ -152,7 +152,12 @@
     <Compile Include="Migrations\201611111429495_multiplerooms.Designer.cs">
       <DependentUpon>201611111429495_multiplerooms.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201611111444220_multipleRecievers.cs" />
+    <Compile Include="Migrations\201611111444220_multipleRecievers.Designer.cs">
+      <DependentUpon>201611111444220_multipleRecievers.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
+    <Compile Include="Models\Reciever.cs" />
     <Compile Include="Models\Room.cs" />
     <Compile Include="Models\Santa.cs" />
     <Compile Include="Models\SecretSantaDbContext.cs" />
@@ -175,6 +180,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201611111429495_multiplerooms.resx">
       <DependentUpon>201611111429495_multiplerooms.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201611111444220_multipleRecievers.resx">
+      <DependentUpon>201611111444220_multipleRecievers.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

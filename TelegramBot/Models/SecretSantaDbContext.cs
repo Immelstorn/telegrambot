@@ -13,6 +13,7 @@ namespace TelegramBot.Models
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<Santa>().HasMany(s => s.Rooms).WithMany(r => r.Santas);
+            modelBuilder.Entity<Santa>().HasMany(s => s.Recievers).WithMany(r => r.Santas);
         }
     }
 }

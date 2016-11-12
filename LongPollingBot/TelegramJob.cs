@@ -231,6 +231,13 @@ namespace LongPollingBot
                                 _bot.SendTextMessageAsync(update.Message.Chat.Id, "Очень жаль. Передумаешь - возвращайся.").Wait();
                                 return;
                             }
+                            else if(update.Message.Text.StartsWith("/stat") && update.Message.From.Username.Equals("Immelstorn", StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                var santas = db.Santas.Count();
+                                var rooms = db.Rooms.Count();
+                                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Santas: {santas}, rooms: {rooms}").Wait();
+                                return;
+                            }
                             else
                             {
                                 if (santa.Status == Status.ChangeAddress)

@@ -98,9 +98,17 @@
     <Compile Include="Migrations\201611111808324_AddSettings.Designer.cs">
       <DependentUpon>201611111808324_AddSettings.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201611141137524_AddGifts.cs" />
+    <Compile Include="Migrations\201611141137524_AddGifts.Designer.cs">
+      <DependentUpon>201611141137524_AddGifts.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201611141204189_timeToSend.cs" />
+    <Compile Include="Migrations\201611141204189_timeToSend.Designer.cs">
+      <DependentUpon>201611141204189_timeToSend.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
+    <Compile Include="Models\Gift.cs" />
     <Compile Include="Models\Settings.cs" />
-    <Compile Include="Models\Reciever.cs" />
     <Compile Include="Models\Room.cs" />
     <Compile Include="Models\Santa.cs" />
     <Compile Include="Models\SecretSantaDbContext.cs" />
@@ -128,6 +136,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201611111808324_AddSettings.resx">
       <DependentUpon>201611111808324_AddSettings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201611141137524_AddGifts.resx">
+      <DependentUpon>201611141137524_AddGifts.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201611141204189_timeToSend.resx">
+      <DependentUpon>201611141204189_timeToSend.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

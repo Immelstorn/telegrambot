@@ -14,5 +14,6 @@ namespace LongPollingBot.Models
         public virtual List<Gift> Gifts { get; set; }
         public DateTime TimeToSend { get; set; }
         public bool MessagesSent { get; set; }
+        public bool ReminderSent { get; set; }
     }
 }

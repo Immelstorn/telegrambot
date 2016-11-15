@@ -24,7 +24,21 @@ namespace LongPollingBot
                 var rooms = db.Rooms.ToList();
                 foreach(var room in rooms)
                 {
-                    if(room.TimeToSend < DateTime.UtcNow && !room.MessagesSent)
+                    if(room.TimeToSend < DateTime.UtcNow.AddDays(-1) && !room.ReminderSent)
+                    {
+                        foreach(var gift in room.Gifts)
+                        {
+                            if(gift.Santa.ChatId != 0)
+                            {
+                                _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Привет! Ровно через сутки я перемешаю участников в комнате \"{room.Password}\" и разошлю адреса. Пожалуйста, проверь что твой адрес правильный и содержит всю необходимую информацию для того чтобы получить подарок на почте.").Wait();
+                                _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Изменить адрес можно с помощью команды /change").Wait();
+                            }
+                        }
+                        room.ReminderSent = true;
+                        db.SaveChanges();
+                    }
+
+                    if (room.TimeToSend < DateTime.UtcNow && !room.MessagesSent)
                     {
                         room.MessagesSent = true;
                         db.SaveChanges();
@@ -49,10 +63,7 @@ namespace LongPollingBot
                 var updates = _bot.GetUpdatesAsync(offset).Result;
                 foreach (var update in updates)
                 {
-                    if(update.Message.From.Username.Equals("Immelstorn",StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        ProcessUpdate(update);
-                    }
+                    ProcessUpdate(update);
 
                     db.Settings.First().Offset = update.Id+1;
                     db.SaveChanges();
@@ -75,7 +86,14 @@ namespace LongPollingBot
 
                 foreach(var gift in gifts)
                 {
-                    _bot.SendTextMessageAsync($"@{gift.Santa.Username}", $"Итак, это время пришло. Твой получатель подарка: {gift.Reciever.Address}").Wait();
+                    if(gift.Santa.ChatId != 0)
+                    {
+                        _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Итак, это время пришло. Твой получатель подарка: {gift.Reciever.Address}").Wait();
+                    }
+                    else
+                    {
+                        _bot.SendTextMessageAsync(72208686, $"У юзера {gift.Santa.Username} chatId=0. Его получатель: {gift.Reciever.Address}").Wait();
+                    }
                 }
             }
         }
@@ -170,7 +188,7 @@ namespace LongPollingBot
                         santa.Address = address;
                         santa.Status = Status.Accepted;
                         db.SaveChanges();
-                        _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Отлично! Адрес сохранен. 4 декабря я всех перемешаю и пришлю тебе адрес другого человека, которому ты должен будешь отправить подарок.").Wait();
+                        _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Отлично! Адрес сохранен. Скоро я всех перемешаю и пришлю тебе адрес другого человека, которому ты должен будешь отправить подарок.").Wait();
                         return;
                     }
 
@@ -179,6 +197,7 @@ namespace LongPollingBot
                         if(update.Message.Text.StartsWith("/help"))
                         {
                             _bot.SendTextMessageAsync(update.Message.Chat.Id, $"/help - помощь \n/change - сменить адрес \n/addroom <пароль к комнате> - добавить комнату \n/info - посмотреть свой адрес и комнаты, в которых ты находишься \n/count <пароль к комнате> - узнать количество человек в комнате \n/quit <пароль к комнате> - выйти из игры").Wait();
+                            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Если у тебя есть вопросы/пожелания или ты заметил какие-то баги - напиши, пожалуйста, пользователю @Immelstorn").Wait();
                             return;
                         }
                         else if(update.Message.Text.StartsWith("/change"))
@@ -302,7 +321,7 @@ namespace LongPollingBot
                                 santa.Address = address;
                                 santa.Status = Status.Accepted;
                                 db.SaveChanges();
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Отлично! Адрес сохранен. 4 декабря я всех перемешаю и пришлю тебе адрес другого человека которому ты должен будешь отправить подарок.").Wait();
+                                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Отлично! Адрес сохранен. Скоро я всех перемешаю и пришлю тебе адрес другого человека которому ты должен будешь отправить подарок.").Wait();
                                 return;
                             }
                             _bot.SendTextMessageAsync(update.Message.Chat.Id, "Извини, я не понимаю что ты хочешь сделать, попробуй воспользоваться помощью - /help").Wait();

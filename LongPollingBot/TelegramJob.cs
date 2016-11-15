@@ -15,18 +15,20 @@ namespace LongPollingBot
     class TelegramJob : IJob
     {
         private readonly TelegramBotClient _bot = new TelegramBotClient(ConfigurationManager.AppSettings["Token"]);
+        private Random _random = new Random();
 
         public void Execute(IJobExecutionContext context)
         {
             using(var db = new SecretSantaDbContext())
             {
-                foreach(var room in db.Rooms)
+                var rooms = db.Rooms.ToList();
+                foreach(var room in rooms)
                 {
-                    if (room.TimeToSend<DateTime.UtcNow && !room.MessagesSent)
+                    if(room.TimeToSend < DateTime.UtcNow && !room.MessagesSent)
                     {
-                        //shuffle and send
                         room.MessagesSent = true;
                         db.SaveChanges();
+                        ShuffleAndSend(room);
                     }
                 }
 
@@ -49,7 +51,7 @@ namespace LongPollingBot
                 {
                     if(update.Message.From.Username.Equals("Immelstorn",StringComparison.InvariantCultureIgnoreCase))
                     {
-                        DoStuff(update);
+                        ProcessUpdate(update);
                     }
 
                     db.Settings.First().Offset = update.Id+1;
@@ -57,8 +59,28 @@ namespace LongPollingBot
                 }
             }
         }
+        private void ShuffleAndSend(Room room)
+        {
+            using(var db = new SecretSantaDbContext())
+            {
+                var gifts = db.Gifts.Where(g => g.Room.Id == room.Id).ToList();
+                gifts = gifts.OrderBy(x => _random.Next()).ToList();
+                for(var i = 0; i < gifts.Count - 1; i++)
+                {
+                    gifts[i].Reciever = gifts[i + 1].Santa;
+                    db.SaveChanges();
+                }
+                gifts[gifts.Count - 1].Reciever = gifts[0].Santa;
+                db.SaveChanges();
 
-        private void DoStuff(Update update)
+                foreach(var gift in gifts)
+                {
+                    _bot.SendTextMessageAsync($"@{gift.Santa.Username}", $"Итак, это время пришло. Твой получатель подарка: {gift.Reciever.Address}").Wait();
+                }
+            }
+        }
+
+        private void ProcessUpdate(Update update)
         {
             try
             {
@@ -69,7 +91,8 @@ namespace LongPollingBot
                     {
                         var newSanta = new Santa {
                             Username = update.Message.From.Username,
-                            Status = Status.WaitingForPassword
+                            Status = Status.WaitingForPassword,
+                            ChatId = update.Message.Chat.Id
                         };
 
                         db.Santas.Add(newSanta);
@@ -77,6 +100,14 @@ namespace LongPollingBot
                         _bot.SendTextMessageAsync(update.Message.Chat.Id, "Судя по всему ты тут новенький.\nС принципиами Secret Santa ты, я надеюсь, знаком.\nЗдесь люди объединяются по комнатам с помощью секретного пароля и собираются дарить друг другу подарки.\n").Wait();
                         _bot.SendTextMessageAsync(update.Message.Chat.Id, "Введи пароль к существующей комнате или новый пароль для создания новой комнаты.").Wait();
                         return;
+                    }
+                    else
+                    {
+                        if(santa.ChatId == 0)
+                        {
+                            santa.ChatId = update.Message.Chat.Id;
+                            db.SaveChanges();
+                        }
                     }
 
                     if(santa.Status == Status.WaitingForPassword)

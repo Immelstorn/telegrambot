@@ -11,6 +11,7 @@ namespace LongPollingBot.Models
         }
 
         public int Id { get; set; }
+        public long ChatId { get; set; }
         public string Username { get; set; }
         public Status Status { get; set; }
         public string Address { get; set; }

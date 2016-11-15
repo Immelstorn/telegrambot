@@ -9,6 +9,7 @@ using Quartz;
 
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 
 namespace LongPollingBot
 {
@@ -65,7 +66,7 @@ namespace LongPollingBot
                 {
                     ProcessUpdate(update);
 
-                    db.Settings.First().Offset = update.Id+1;
+                    db.Settings.First().Offset = update.Id + 1;
                     db.SaveChanges();
                 }
             }
@@ -196,18 +197,21 @@ namespace LongPollingBot
                     {
                         if(update.Message.Text.StartsWith("/help"))
                         {
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"/help - помощь \n/change - сменить адрес \n/addroom <пароль к комнате> - добавить комнату \n/info - посмотреть свой адрес и комнаты, в которых ты находишься \n/count <пароль к комнате> - узнать количество человек в комнате \n/quit <пароль к комнате> - выйти из игры").Wait();
+                            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"/help - помощь \n/change - сменить адрес \n/addroom _пароль к комнате_ - добавить комнату \n/info - посмотреть свой адрес и комнаты, в которых ты находишься \n/count _пароль к комнате_ - узнать количество человек в комнате \n/quit _пароль к комнате_ - выйти из комнаты", parseMode:ParseMode.Markdown).Wait();
+                            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"После того как я разошлю адреса, можно будет воспользоваться следующими командами: \n\n/sent _пароль к комнате_|_сообщение для получателя_ - сообщить получателю что подарок в пути, можно добавить сообщение для получателя, например с трек-номером. \n*Обрати внимание на разделитель между паролем к комнате и сообщением* \n\n/recieved _пароль к комнате_ - сообщить Санте что подарок получен \n\nСтоит помнить что эти команды одноразовые и отменить их действие нельзя.", parseMode: ParseMode.Markdown).Wait();
                             _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Если у тебя есть вопросы/пожелания или ты заметил какие-то баги - напиши, пожалуйста, пользователю @Immelstorn").Wait();
                             return;
                         }
-                        else if(update.Message.Text.StartsWith("/change"))
+
+                        if (update.Message.Text.StartsWith("/change"))
                         {
                             santa.Status = Status.ChangeAddress;
                             db.SaveChanges();
                             _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пришли свой новый адрес, на который твой Санта вышлет тебе подарок.").Wait();
                             return;
                         }
-                        else if(update.Message.Text.StartsWith("/addroom"))
+
+                        if (update.Message.Text.StartsWith("/addroom"))
                         {
                             var password = update.Message.Text.Replace("/addroom ", string.Empty);
                             if(string.IsNullOrEmpty(password) || update.Message.Text.Equals("/addroom") || password.Length < 6)
@@ -249,7 +253,8 @@ namespace LongPollingBot
                             _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Ты добавлен в эту комнату, сейчас тут {++count} человек.").Wait();
                             return;
                         }
-                        else if(update.Message.Text.StartsWith("/count"))
+
+                        if (update.Message.Text.StartsWith("/count"))
                         {
                             var password = update.Message.Text.Replace("/count ", string.Empty);
                             if(string.IsNullOrEmpty(password) || update.Message.Text.Equals("/count") || password.Length < 6)
@@ -270,7 +275,8 @@ namespace LongPollingBot
                             _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Cейчас тут {count} человек.").Wait();
                             return;
                         }
-                        else if(update.Message.Text.StartsWith("/info"))
+
+                        if (update.Message.Text.StartsWith("/info"))
                         {
                             var rooms = "";
                             if(santa.Gifts.Any())
@@ -281,7 +287,8 @@ namespace LongPollingBot
                             _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Твой текущий адрес - {santa.Address}, твои комнаты: {rooms}").Wait();
                             return;
                         }
-                        else if(update.Message.Text.StartsWith("/quit"))
+
+                        if (update.Message.Text.StartsWith("/quit"))
                         {
                             var password = update.Message.Text.Replace("/quit ", string.Empty);
                             if(string.IsNullOrEmpty(password) || update.Message.Text.Equals("/quit") || password.Length < 6)
@@ -301,7 +308,8 @@ namespace LongPollingBot
                             _bot.SendTextMessageAsync(update.Message.Chat.Id, "Очень жаль. Передумаешь - возвращайся.").Wait();
                             return;
                         }
-                        else if(update.Message.Text.StartsWith("/stat") && update.Message.From.Username.Equals("Immelstorn", StringComparison.InvariantCultureIgnoreCase))
+
+                        if (update.Message.Text.StartsWith("/stat") && update.Message.From.Username.Equals("Immelstorn", StringComparison.InvariantCultureIgnoreCase))
                         {
                             var santas = db.Santas.Count();
                             var rooms = db.Rooms.Count();

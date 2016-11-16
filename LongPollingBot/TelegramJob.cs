@@ -171,7 +171,7 @@ namespace LongPollingBot
 
                         if(update.Message.Text.StartsWith("/faq"))
                         {
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, Faq.Get()).Wait();
+                            _bot.SendTextMessageAsync(update.Message.Chat.Id, Faq.Get(),parseMode:ParseMode.Markdown).Wait();
                             return;
                         }
 

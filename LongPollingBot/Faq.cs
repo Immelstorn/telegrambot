@@ -8,7 +8,7 @@ namespace LongPollingBot
         public static string Get()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("*Q: Что бот делает?" *);
+            sb.AppendLine("*Q: Что бот делает?*");
             sb.AppendLine("A: Бот собирает людей для проведения локального АДМ(он же Secret Santa)");
             sb.AppendLine(Environment.NewLine);
             sb.AppendLine("*Q: Что такое комната?*");

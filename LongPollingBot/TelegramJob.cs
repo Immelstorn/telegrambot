@@ -163,9 +163,15 @@ namespace LongPollingBot
                     {
                         if(update.Message.Text.StartsWith("/help"))
                         {
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"/help - помощь \n/change - сменить адрес \n/addroom _пароль к комнате_ - добавить комнату \n/info - посмотреть свой адрес и комнаты, в которых ты находишься \n/count _пароль к комнате_ - узнать количество человек в комнате \n/quit _пароль к комнате_ - выйти из комнаты", parseMode:ParseMode.Markdown).Wait();
+                            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"/help - помощь \n/faq - подробный список вопросов и ответов на них \n/change - сменить адрес \n/addroom _пароль к комнате_ - добавить комнату \n/info - посмотреть свой адрес и комнаты, в которых ты находишься \n/count _пароль к комнате_ - узнать количество человек в комнате \n/quit _пароль к комнате_ - выйти из комнаты", parseMode:ParseMode.Markdown).Wait();
                             _bot.SendTextMessageAsync(update.Message.Chat.Id, $"После того как я разошлю адреса, можно будет воспользоваться следующими командами: \n\n/sent _пароль к комнате_|_сообщение для получателя_ - сообщить получателю что подарок в пути, можно добавить сообщение для получателя, например с трек-номером. \n*Обрати внимание на разделитель между паролем к комнате и сообщением* \n\n/recieved _пароль к комнате_ - сообщить Санте что подарок получен \n\nСтоит помнить что эти команды одноразовые и отменить их действие нельзя.", parseMode: ParseMode.Markdown).Wait();
                             _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Если у тебя есть вопросы/пожелания или ты заметил какие-то баги - напиши, пожалуйста, пользователю @Immelstorn").Wait();
+                            return;
+                        }
+
+                        if(update.Message.Text.StartsWith("/faq"))
+                        {
+                            _bot.SendTextMessageAsync(update.Message.Chat.Id, Faq.Get()).Wait();
                             return;
                         }
 

@@ -82,6 +82,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Faq.cs" />
     <Compile Include="Migrations\201611111147108_initial.cs" />
     <Compile Include="Migrations\201611111147108_initial.Designer.cs">
       <DependentUpon>201611111147108_initial.cs</DependentUpon>

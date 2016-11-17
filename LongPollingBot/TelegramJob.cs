@@ -310,7 +310,56 @@ namespace LongPollingBot
 
                         if (update.Message.Text.StartsWith("/received"))
                         {
+                            Room room = null;
+                            var password = update.Message.Text.Replace("/received ", string.Empty);
+                            if (string.IsNullOrEmpty(password) || update.Message.Text.Equals("/received") || password.Length < 6)
+                            {
+                                if(santa.Gifts.Count > 1)
+                                {
+                                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Ты состоишь более чем в одной комнате, укажи пароль к комнате из которой ты получил подарок. Если ты не знаешь точно - что ж, ты не сможешь сообщить о получении. Помни, что пароль должен быть длиннее 6 символов.").Wait();
+                                    return;
+                                }
 
+                                if (santa.Gifts.Count == 1)
+                                {
+                                    room = santa.Gifts.First().Room;
+                                }
+                            }
+
+                            if(room == null)
+                            {
+                                room = db.Rooms.FirstOrDefault(r => r.Password.Equals(password));
+                            }
+                            if (room == null || santa.Gifts.All(g => g.Room.Id != room.Id))
+                            {
+                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует").Wait();
+                                return;
+                            }
+                            if (!room.MessagesSent)
+                            {
+                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Я еще не рассылал адреса по этой комнате, о чем ты собрался отчитываться?").Wait();
+                                return;
+                            }
+                            var gift = santa.Gifts.First(g => g.Room.Id == room.Id);
+
+                            if (gift.Recieved)
+                            {
+                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Ты уже отчитывался ранее о получении этого подарка, спасибо!").Wait();
+                                return;
+                            }
+
+                            if (!gift.Sent)
+                            {
+                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Санта не указал что он отправил подарок, ты не можешь подтвердить его получение.").Wait();
+                                return;
+                            }
+
+                            gift.Recieved = true;
+                            gift.RecievedDate = DateTime.UtcNow;
+                            db.SaveChanges();
+                            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Ура! Я немедленно передам эту радостную новость твоему Санте! С Новым годом!").Wait();
+                            _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Миссия выполнена! Твой подарок благополучно дошел получателю из комнаты \"{gift.Room.Password}\"!").Wait();
+                            return;
                         }
 
                         if (santa.Status == Status.ChangeAddress)

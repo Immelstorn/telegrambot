@@ -25,7 +25,7 @@ namespace LongPollingBot
                 var rooms = db.Rooms.ToList();
                 foreach(var room in rooms)
                 {
-                    if(room.TimeToSend < DateTime.UtcNow.AddDays(-1) && !room.ReminderSent)
+                    if(room.TimeToSend.AddDays(-1) < DateTime.UtcNow && !room.ReminderSent)
                     {
                         foreach(var gift in room.Gifts)
                         {
@@ -103,25 +103,16 @@ namespace LongPollingBot
         {
             try
             {
-                using (var db = new SecretSantaDbContext())
+                using(var db = new SecretSantaDbContext())
                 {
                     var santa = db.Santas.FirstOrDefault(s => s.Username == update.Message.From.Username);
-                    if (santa == null)
+                    if(santa == null)
                     {
-                        var newSanta = new Santa {
-                            Username = update.Message.From.Username,
-                            Status = Status.WaitingForPassword,
-                            ChatId = update.Message.Chat.Id
-                        };
-
-                        db.Santas.Add(newSanta);
-                        db.SaveChanges();
-                        _bot.SendTextMessageAsync(update.Message.Chat.Id, "Судя по всему ты тут новенький.\nС принципиами Secret Santa ты, я надеюсь, знаком.\nЗдесь люди объединяются по комнатам с помощью секретного пароля и собираются дарить друг другу подарки.\n").Wait();
-                        _bot.SendTextMessageAsync(update.Message.Chat.Id, "Введи пароль к существующей комнате или новый пароль для создания новой комнаты.").Wait();
+                        NewSanta(update, db);
                         return;
                     }
 
-                    if (santa.ChatId == 0)
+                    if(santa.ChatId == 0)
                     {
                         santa.ChatId = update.Message.Chat.Id;
                         db.SaveChanges();
@@ -129,61 +120,29 @@ namespace LongPollingBot
 
                     if(santa.Status == Status.WaitingForPassword)
                     {
-                        var password = update.Message.Text;
-                        if(string.IsNullOrEmpty(password) || password.Length < 6)
-                        {
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.").Wait();
-                            return;
-                        }
-
-                        AddRoom(update, db, password, santa);
-
-                        santa.Status = Status.WaitingForAddress;
-                        db.SaveChanges();
-                        _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пришли свой адрес, на который твой Санта вышлет тебе подарок.").Wait();
-                        return;
+                        WaitingForPassword(update, db, santa);
                     }
-
-                    if(santa.Status == Status.WaitingForAddress)
+                    else if(santa.Status == Status.WaitingForAddress)
                     {
-                        var address = update.Message.Text;
-                        if(string.IsNullOrEmpty(address) || address.Length < 10)
-                        {
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Не бывает таких коротких адресов. Помни что тебе также надо указать свои ФИО или что там требует почта в твоей стране.").Wait();
-                            return;
-                        }
-                        santa.Address = address;
-                        santa.Status = Status.Accepted;
-                        db.SaveChanges();
-                        _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Отлично! Адрес сохранен. Скоро я всех перемешаю и пришлю тебе адрес другого человека, которому ты должен будешь отправить подарок.").Wait();
-                        return;
+                        WaitingForAddress(update, santa, db);
                     }
-
-                    if(santa.Status == Status.Accepted || santa.Status == Status.ChangeAddress)
+                    else if(santa.Status == Status.Accepted)
                     {
                         if(update.Message.Text.StartsWith("/help"))
                         {
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"/help - помощь \n/faq - подробный список вопросов и ответов на них \n/change - сменить адрес \n/addroom _пароль к комнате_ - добавить комнату \n/info - посмотреть свой адрес и комнаты, в которых ты находишься \n/count _пароль к комнате_ - узнать количество человек в комнате \n/quit _пароль к комнате_ - выйти из комнаты", parseMode:ParseMode.Markdown).Wait();
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"После того как я разошлю адреса, можно будет воспользоваться следующими командами: \n\n/sent _пароль к комнате_|_сообщение для получателя_ - сообщить получателю что подарок в пути, можно добавить сообщение для получателя, например с трек-номером. \n*Обрати внимание на разделитель между паролем к комнате и сообщением* \n\n/recieved _пароль к комнате_ - сообщить Санте что подарок получен \n\nСтоит помнить что эти команды одноразовые и отменить их действие нельзя.", parseMode: ParseMode.Markdown).Wait();
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Если у тебя есть вопросы/пожелания или ты заметил какие-то баги - напиши, пожалуйста, пользователю @Immelstorn").Wait();
-                            return;
+                            Help(update);
                         }
-
-                        if(update.Message.Text.StartsWith("/faq"))
+                        else if(update.Message.Text.StartsWith("/faq"))
                         {
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, Faq.Get(),parseMode:ParseMode.Markdown).Wait();
-                            return;
+                            _bot.SendTextMessageAsync(update.Message.Chat.Id, Faq.Get(), parseMode: ParseMode.Markdown).Wait();
                         }
-
-                        if (update.Message.Text.StartsWith("/change"))
+                        else if(update.Message.Text.StartsWith("/change"))
                         {
-                            santa.Status = Status.ChangeAddress;
+                            santa.Status = Status.WaitingForAddress;
                             db.SaveChanges();
                             _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пришли свой новый адрес, на который твой Санта вышлет тебе подарок.").Wait();
-                            return;
                         }
-
-                        if (update.Message.Text.StartsWith("/addroom"))
+                        else if(update.Message.Text.StartsWith("/addroom"))
                         {
                             var password = update.Message.Text.Replace("/addroom ", string.Empty);
                             if(string.IsNullOrEmpty(password) || update.Message.Text.Equals("/addroom") || password.Length < 6)
@@ -193,200 +152,254 @@ namespace LongPollingBot
                             }
 
                             AddRoom(update, db, password, santa);
-                            return;
                         }
-
-                        if (update.Message.Text.StartsWith("/count"))
+                        else if(update.Message.Text.StartsWith("/count"))
                         {
-                            var password = update.Message.Text.Replace("/count ", string.Empty);
-                            if(string.IsNullOrEmpty(password) || update.Message.Text.Equals("/count") || password.Length < 6)
-                            {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.").Wait();
-                                return;
-                            }
-                            var room = db.Rooms.FirstOrDefault(r => r.Password.Equals(password));
-                            if(room == null)
-                            {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует, ты можешь добавить ее с помощью комманды /addroom <пароль к комнате>").Wait();
-                                return;
-                            }
-
-                            var roomId = room.Id;
-                            var count = db.Santas.Count(s => s.Gifts.Any(g => g.Room.Id == room.Id));
-
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Cейчас тут {count} человек.").Wait();
-                            return;
+                            Count(update, db);
                         }
-
-                        if (update.Message.Text.StartsWith("/info"))
+                        else if(update.Message.Text.StartsWith("/info"))
                         {
-                            var rooms = "";
-                            if(santa.Gifts.Any())
-                            {
-                                rooms = santa.Gifts.Aggregate(string.Empty, (current, gift) => current + $" {gift.Room.Password},");
-                                rooms = rooms.Substring(1, rooms.Length - 2);
-                            }
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Твой текущий адрес - {santa.Address}, твои комнаты: {rooms}").Wait();
-                            return;
+                            Info(update, santa);
                         }
-
-                        if (update.Message.Text.StartsWith("/quit"))
+                        else if(update.Message.Text.StartsWith("/quit"))
                         {
-                            var password = update.Message.Text.Replace("/quit ", string.Empty);
-                            if(string.IsNullOrEmpty(password) || update.Message.Text.Equals("/quit") || password.Length < 6)
-                            {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 6 символов.").Wait();
-                                return;
-                            }
-                            var room = db.Rooms.FirstOrDefault(r => r.Password.Equals(password));
-                            if(room == null || santa.Gifts.All(g => g.Room.Id != room.Id))
-                            {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует").Wait();
-                                return;
-                            }
-                            var gift = santa.Gifts.First(g => g.Room.Id == room.Id);
-                            db.Gifts.Remove(gift);
-                            db.SaveChanges();
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Очень жаль. Передумаешь - возвращайся.").Wait();
-                            return;
+                            Quit(update, db, santa);
                         }
-
-                        if (update.Message.Text.StartsWith("/stat") && update.Message.From.Username.Equals("Immelstorn", StringComparison.InvariantCultureIgnoreCase))
+                        else if(update.Message.Text.StartsWith("/stat") && update.Message.From.Username.Equals("Immelstorn", StringComparison.InvariantCultureIgnoreCase))
                         {
-                            var santas = db.Santas.Count();
-                            var rooms = db.Rooms.Count();
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Santas: {santas}, rooms: {rooms}").Wait();
-                            return;
+                            Stat(update, db);
                         }
-
-                        if(update.Message.Text.StartsWith("/sent"))
+                        else if(update.Message.Text.StartsWith("/sent"))
                         {
-                            var parameters = update.Message.Text.Replace("/sent ", string.Empty).Split('|');
-
-                            if (parameters.Length == 0 || update.Message.Text.Equals("/sent"))
-                            {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Ты забыл указать пароль к комнате и сообщение для получателя!").Wait();
-                                return;
-                            }
-
-                            var password = parameters[0];
-                            var room = db.Rooms.FirstOrDefault(r => r.Password.Equals(password));
-                            if (room == null || santa.Gifts.All(g => g.Room.Id != room.Id))
-                            {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не найдена").Wait();
-                                return;
-                            }
-
-                            if(!room.MessagesSent)
-                            {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Я еще не рассылал адреса по этой комнате, о чем ты собрался отчитываться?").Wait();
-                                return;
-                            }
-
-                            var gift = santa.Gifts.First(g => g.Room.Id == room.Id);
-
-                            if(gift.Sent)
-                            {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Ты уже отчитывался ранее об отправке этого подарка, спасибо!").Wait();
-                                return;
-                            }
-
-                            gift.Sent = true;
-                            gift.SentDate = DateTime.UtcNow;
-
-                            if (parameters.Length == 2)
-                            {
-                                gift.MessageFromSanta = parameters[1];
-                            }
-                            db.SaveChanges();
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Спасибо! Я немедленно передам эту радостную новость получателю! С Новым годом!").Wait();
-                            _bot.SendTextMessageAsync(gift.Reciever.ChatId, $"Ура! Тебе отправили подарок из комнаты \"{gift.Room.Password}\"! Начинайте ждать и уважать почту! С Новым годом!").Wait();
-
-                            if(!string.IsNullOrEmpty(gift.MessageFromSanta))
-                            {
-                                _bot.SendTextMessageAsync(gift.Reciever.ChatId, $"Твой Санта также оставил для тебе сообщение. Вот оно: {gift.MessageFromSanta}").Wait();
-                            }
+                            Sent(update, db, santa);
                         }
-
-                        if (update.Message.Text.StartsWith("/received"))
+                        else if(update.Message.Text.StartsWith("/received"))
                         {
-                            Room room = null;
-                            var password = update.Message.Text.Replace("/received ", string.Empty);
-                            if (string.IsNullOrEmpty(password) || update.Message.Text.Equals("/received") || password.Length < 6)
-                            {
-                                if(santa.Gifts.Count > 1)
-                                {
-                                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Ты состоишь более чем в одной комнате, укажи пароль к комнате из которой ты получил подарок. Если ты не знаешь точно - что ж, ты не сможешь сообщить о получении. Помни, что пароль должен быть длиннее 6 символов.").Wait();
-                                    return;
-                                }
-
-                                if (santa.Gifts.Count == 1)
-                                {
-                                    room = santa.Gifts.First().Room;
-                                }
-                            }
-
-                            if(room == null)
-                            {
-                                room = db.Rooms.FirstOrDefault(r => r.Password.Equals(password));
-                            }
-                            if (room == null || santa.Gifts.All(g => g.Room.Id != room.Id))
-                            {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует").Wait();
-                                return;
-                            }
-                            if (!room.MessagesSent)
-                            {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Я еще не рассылал адреса по этой комнате, о чем ты собрался отчитываться?").Wait();
-                                return;
-                            }
-                            var gift = santa.Gifts.First(g => g.Room.Id == room.Id);
-
-                            if (gift.Recieved)
-                            {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Ты уже отчитывался ранее о получении этого подарка, спасибо!").Wait();
-                                return;
-                            }
-
-                            if (!gift.Sent)
-                            {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Санта не указал что он отправил подарок, ты не можешь подтвердить его получение.").Wait();
-                                return;
-                            }
-
-                            gift.Recieved = true;
-                            gift.RecievedDate = DateTime.UtcNow;
-                            db.SaveChanges();
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Ура! Я немедленно передам эту радостную новость твоему Санте! С Новым годом!").Wait();
-                            _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Миссия выполнена! Твой подарок благополучно дошел получателю из комнаты \"{gift.Room.Password}\"!").Wait();
-                            return;
+                            Recieved(update, santa, db);
                         }
-
-                        if (santa.Status == Status.ChangeAddress)
+                        else
                         {
-                            var address = update.Message.Text;
-                            if(string.IsNullOrEmpty(address) || address.Length < 10)
-                            {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Не бывает таких коротких адресов. Помни что тебе также надо указать свои ФИО или что там требует почта в твоей стране.").Wait();
-                                return;
-                            }
-                            santa.Address = address;
-                            santa.Status = Status.Accepted;
-                            db.SaveChanges();
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Отлично! Адрес сохранен. Скоро я всех перемешаю и пришлю тебе адрес другого человека которому ты должен будешь отправить подарок.").Wait();
-                            return;
+                            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Извини, я не понимаю что ты хочешь сделать, попробуй воспользоваться помощью - /help").Wait();
                         }
-
-                        _bot.SendTextMessageAsync(update.Message.Chat.Id, "Извини, я не понимаю что ты хочешь сделать, попробуй воспользоваться помощью - /help").Wait();
-                        return;
                     }
                 }
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 Trace.TraceError(e.Message);
                 Trace.TraceError(e.StackTrace);
             }
+        }
+
+        private void WaitingForAddress(Update update, Santa santa, SecretSantaDbContext db)
+        {
+            var address = update.Message.Text;
+            if(string.IsNullOrEmpty(address) || address.Length < 10)
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Не бывает таких коротких адресов. Помни что тебе также надо указать свои ФИО или что там требует почта в твоей стране.").Wait();
+                return;
+            }
+            santa.Address = address;
+            santa.Status = Status.Accepted;
+            db.SaveChanges();
+            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Отлично! Адрес сохранен. Скоро я всех перемешаю и пришлю тебе адрес другого человека, которому ты должен будешь отправить подарок.").Wait();
+        }
+
+        private void WaitingForPassword(Update update, SecretSantaDbContext db, Santa santa)
+        {
+            var password = update.Message.Text;
+            if(string.IsNullOrEmpty(password) || password.Length < 6)
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.").Wait();
+                return;
+            }
+
+            AddRoom(update, db, password, santa);
+
+            santa.Status = Status.WaitingForAddress;
+            db.SaveChanges();
+            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пришли свой адрес, на который твой Санта вышлет тебе подарок.").Wait();
+        }
+
+        private void NewSanta(Update update, SecretSantaDbContext db)
+        {
+            var newSanta = new Santa {
+                Username = update.Message.From.Username,
+                Status = Status.WaitingForPassword,
+                ChatId = update.Message.Chat.Id
+            };
+
+            db.Santas.Add(newSanta);
+            db.SaveChanges();
+            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Судя по всему ты тут новенький.\nС принципиами Secret Santa ты, я надеюсь, знаком.\nЗдесь люди объединяются по комнатам с помощью секретного пароля и собираются дарить друг другу подарки.\n").Wait();
+            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Введи пароль к существующей комнате или новый пароль для создания новой комнаты.").Wait();
+        }
+
+        private void Help(Update update)
+        {
+            _bot.SendTextMessageAsync(update.Message.Chat.Id, "/help - помощь \n/faq - подробный список вопросов и ответов на них \n/change - сменить адрес \n/addroom _пароль к комнате_ - добавить комнату \n/info - посмотреть свой адрес и комнаты, в которых ты находишься \n/count _пароль к комнате_ - узнать количество человек в комнате \n/quit _пароль к комнате_ - выйти из комнаты", parseMode: ParseMode.Markdown).Wait();
+            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"После того как я разошлю адреса, можно будет воспользоваться следующими командами: \n\n/sent _пароль к комнате_|_сообщение для получателя_ - сообщить получателю что подарок в пути, можно добавить сообщение для получателя, например с трек-номером. \n*Обрати внимание на разделитель между паролем к комнате и сообщением* \n\n/recieved _пароль к комнате_ - сообщить Санте что подарок получен \n\nСтоит помнить что эти команды одноразовые и отменить их действие нельзя.", parseMode: ParseMode.Markdown).Wait();
+            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Если у тебя есть вопросы/пожелания или ты заметил какие-то баги - напиши, пожалуйста, пользователю @Immelstorn").Wait();
+        }
+
+        private void Count(Update update, SecretSantaDbContext db)
+        {
+            var password = update.Message.Text.Replace("/count ", string.Empty);
+            if(string.IsNullOrEmpty(password) || update.Message.Text.Equals("/count") || password.Length < 6)
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.").Wait();
+                return;
+            }
+            var room = db.Rooms.FirstOrDefault(r => r.Password.Equals(password));
+            if(room == null)
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует, ты можешь добавить ее с помощью комманды /addroom <пароль к комнате>").Wait();
+                return;
+            }
+
+            var count = db.Santas.Count(s => s.Gifts.Any(g => g.Room.Id == room.Id));
+
+            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Cейчас тут {count} человек.").Wait();
+        }
+
+        private void Stat(Update update, SecretSantaDbContext db)
+        {
+            var santas = db.Santas.Count();
+            var rooms = db.Rooms.Count();
+            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Santas: {santas}, rooms: {rooms}").Wait();
+        }
+
+        private void Info(Update update, Santa santa)
+        {
+            var rooms = "";
+            if(santa.Gifts.Any())
+            {
+                rooms = santa.Gifts.Aggregate(string.Empty, (current, gift) => current + $" {gift.Room.Password},");
+                rooms = rooms.Substring(1, rooms.Length - 2);
+            }
+            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Твой текущий адрес - {santa.Address}, твои комнаты: {rooms}").Wait();
+        }
+
+        private void Quit(Update update, SecretSantaDbContext db, Santa santa)
+        {
+            var password = update.Message.Text.Replace("/quit ", string.Empty);
+            if(string.IsNullOrEmpty(password) || update.Message.Text.Equals("/quit") || password.Length < 6)
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 6 символов.").Wait();
+                return;
+            }
+            var room = db.Rooms.FirstOrDefault(r => r.Password.Equals(password));
+            if(room == null || santa.Gifts.All(g => g.Room.Id != room.Id))
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует").Wait();
+                return;
+            }
+            var gift = santa.Gifts.First(g => g.Room.Id == room.Id);
+            db.Gifts.Remove(gift);
+            db.SaveChanges();
+            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Очень жаль. Передумаешь - возвращайся.").Wait();
+        }
+
+        private void Sent(Update update, SecretSantaDbContext db, Santa santa)
+        {
+            var parameters = update.Message.Text.Replace("/sent ", string.Empty).Split('|');
+
+            if(parameters.Length == 0 || update.Message.Text.Equals("/sent"))
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Ты забыл указать пароль к комнате и сообщение для получателя!").Wait();
+                return;
+            }
+
+            var password = parameters[0];
+            var room = db.Rooms.FirstOrDefault(r => r.Password.Equals(password));
+            if(room == null || santa.Gifts.All(g => g.Room.Id != room.Id))
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не найдена").Wait();
+                return;
+            }
+
+            if(!room.MessagesSent)
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Я еще не рассылал адреса по этой комнате, о чем ты собрался отчитываться?").Wait();
+                return;
+            }
+
+            var gift = santa.Gifts.First(g => g.Room.Id == room.Id);
+
+            if(gift.Sent)
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Ты уже отчитывался ранее об отправке этого подарка, спасибо!").Wait();
+                return;
+            }
+
+            gift.Sent = true;
+            gift.SentDate = DateTime.UtcNow;
+
+            if(parameters.Length == 2)
+            {
+                gift.MessageFromSanta = parameters[1];
+            }
+            db.SaveChanges();
+            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Спасибо! Я немедленно передам эту радостную новость получателю! С Новым годом!").Wait();
+            _bot.SendTextMessageAsync(gift.Reciever.ChatId, $"Ура! Тебе отправили подарок из комнаты \"{gift.Room.Password}\"! Начинайте ждать и уважать почту! С Новым годом!").Wait();
+
+            if(!string.IsNullOrEmpty(gift.MessageFromSanta))
+            {
+                _bot.SendTextMessageAsync(gift.Reciever.ChatId, $"Твой Санта также оставил для тебе сообщение. Вот оно: {gift.MessageFromSanta}").Wait();
+            }
+        }
+
+        private void Recieved(Update update, Santa santa, SecretSantaDbContext db)
+        {
+            Room room = null;
+            var password = update.Message.Text.Replace("/received ", string.Empty);
+            if(string.IsNullOrEmpty(password) || update.Message.Text.Equals("/received") || password.Length < 6)
+            {
+                if(santa.Gifts.Count > 1)
+                {
+                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Ты состоишь более чем в одной комнате, укажи пароль к комнате из которой ты получил подарок. Если ты не знаешь точно - что ж, ты не сможешь сообщить о получении. Помни, что пароль должен быть длиннее 6 символов.").Wait();
+                    return;
+                }
+
+                if(santa.Gifts.Count == 1)
+                {
+                    room = santa.Gifts.First().Room;
+                }
+            }
+
+            if(room == null)
+            {
+                room = db.Rooms.FirstOrDefault(r => r.Password.Equals(password));
+            }
+            if(room == null || santa.Gifts.All(g => g.Room.Id != room.Id))
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует").Wait();
+                return;
+            }
+            if(!room.MessagesSent)
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Я еще не рассылал адреса по этой комнате, о чем ты собрался отчитываться?").Wait();
+                return;
+            }
+            var gift = santa.Gifts.First(g => g.Room.Id == room.Id);
+
+            if(gift.Recieved)
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Ты уже отчитывался ранее о получении этого подарка, спасибо!").Wait();
+                return;
+            }
+
+            if(!gift.Sent)
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Санта не указал что он отправил подарок, ты не можешь подтвердить его получение.").Wait();
+                return;
+            }
+
+            gift.Recieved = true;
+            gift.RecievedDate = DateTime.UtcNow;
+            db.SaveChanges();
+            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Ура! Я немедленно передам эту радостную новость твоему Санте! С Новым годом!").Wait();
+            _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Миссия выполнена! Твой подарок благополучно дошел получателю из комнаты \"{gift.Room.Password}\"!").Wait();
         }
 
         private void AddRoom(Update update, SecretSantaDbContext db, string password, Santa santa)
@@ -428,7 +441,6 @@ namespace LongPollingBot
             santa.Gifts.Add(newgift);
             db.SaveChanges();
             _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Ты добавлен в эту комнату, сейчас тут {++count} человек.").Wait();
-            return;
         }
     }
 }

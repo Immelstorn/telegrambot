@@ -115,8 +115,13 @@
     <Compile Include="Migrations\201611151023002_reminderSent.Designer.cs">
       <DependentUpon>201611151023002_reminderSent.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201611181002517_addLanguage.cs" />
+    <Compile Include="Migrations\201611181002517_addLanguage.Designer.cs">
+      <DependentUpon>201611181002517_addLanguage.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Gift.cs" />
+    <Compile Include="Models\Language.cs" />
     <Compile Include="Models\Settings.cs" />
     <Compile Include="Models\Room.cs" />
     <Compile Include="Models\Santa.cs" />
@@ -157,6 +162,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201611151023002_reminderSent.resx">
       <DependentUpon>201611151023002_reminderSent.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201611181002517_addLanguage.resx">
+      <DependentUpon>201611181002517_addLanguage.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

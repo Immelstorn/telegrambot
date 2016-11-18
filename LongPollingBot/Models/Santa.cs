@@ -16,6 +16,8 @@ namespace LongPollingBot.Models
         public Status Status { get; set; }
         public string Address { get; set; }
         public DateTime RegistrationDate { get; set; }
+        public Language Language { get; set; }
+
         public virtual List<Gift> Gifts { get; set; }
         public virtual List<Gift> GiftsToMe { get; set; }
     }

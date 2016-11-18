@@ -15,5 +15,6 @@ namespace LongPollingBot.Models
         public DateTime TimeToSend { get; set; }
         public bool MessagesSent { get; set; }
         public bool ReminderSent { get; set; }
+        public virtual Santa Creator { get; set; }
     }
 }

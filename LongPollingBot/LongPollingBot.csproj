@@ -119,6 +119,10 @@
     <Compile Include="Migrations\201611181002517_addLanguage.Designer.cs">
       <DependentUpon>201611181002517_addLanguage.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201611181202514_addRoomCreator.cs" />
+    <Compile Include="Migrations\201611181202514_addRoomCreator.Designer.cs">
+      <DependentUpon>201611181202514_addRoomCreator.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Gift.cs" />
     <Compile Include="Models\Language.cs" />
@@ -165,6 +169,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201611181002517_addLanguage.resx">
       <DependentUpon>201611181002517_addLanguage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201611181202514_addRoomCreator.resx">
+      <DependentUpon>201611181202514_addRoomCreator.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

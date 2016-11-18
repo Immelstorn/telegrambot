@@ -31,7 +31,7 @@ namespace LongPollingBot
             sb.AppendLine("A: Указывай адрес с индексом, не забудь ФИО, хорошо на всякий случай указать номер телефона чтоб Санта мог с тобой связаться в случае вопросов.");
             sb.AppendLine(Environment.NewLine);
             sb.AppendLine("*Q: Ой, я переехал, как поменять адрес?*");
-            sb.AppendLine("A: Напиши боту /change и он позволит тебе сменить адрес.");
+            sb.AppendLine("A: Напиши боту /changeaddress и он позволит тебе сменить адрес.");
             sb.AppendLine(Environment.NewLine);
             sb.AppendLine("*Q: Я начал регистрацию и передумал, а бот требует адрес и не отстает, как это прекратить?*");
             sb.AppendLine("A: Нужно пройти начальную фазу регистрации - всего два шага - указать пароль от комнаты и адрес, после этого можно будет выйти из этой комнаты если передумал.");
@@ -43,7 +43,7 @@ namespace LongPollingBot
             sb.AppendLine("A: Напиши ему /help");
             sb.AppendLine(Environment.NewLine);
             sb.AppendLine("*Q: Когда мне придет адрес куда отправлять подарок?*");
-            sb.AppendLine("A: По умолчанию все в каждой комнате будут перетасованы 4 декабря, но если ты хочешь изменить эту дату для какой-то комнаты - пиши @Immelstorn");
+            sb.AppendLine("A: По умолчанию все в каждой комнате будут перетасованы 4 декабря, но эту дату можно поменять с помощью команды /changedate, подробней читай в /help");
             sb.AppendLine(Environment.NewLine);
             sb.AppendLine("*Q: Я отправил подарок, что теперь?*");
             sb.AppendLine("A: Молодец! Теперь надо сообщить своему получателю об этом. Для этого напиши боту \"/sent _пароль от комнаты для которой ты отправил подарок_|_необязательное сообщение для получателя_\". Обрати внимание на разделитель между паролем и сообщением, он важен. В качестве сообщения можно указать трекинговый номер, или просто поздравить с Новым годом. Рекоммендую внутри подарка указать пароль от комнаты из которой ты его отправляешь, чтобы получатель смог отчитаться о получении.");
@@ -88,7 +88,7 @@ namespace LongPollingBot
             sb.AppendLine("A: Be sure to specify full address which is needed to get a gift. Including your ZIP code, you full name, and it is a good idea to specify a phone number, in that case your Santa will be able to contact you in the case of problems.");
             sb.AppendLine(Environment.NewLine);
             sb.AppendLine("*Q: I've moved, can I change my address?*");
-            sb.AppendLine("A: Sure. Send to the bot \"/change\" and he will allow you to change your address");
+            sb.AppendLine("A: Sure. Send to the bot \"/changeaddress\" and he will allow you to change your address");
             sb.AppendLine(Environment.NewLine);
             sb.AppendLine("*Q: I've started registration and suddenly changed my mind, and the bot continue to ask password or address, how can I stop it?*");
             sb.AppendLine("A: You should finish initial phase - specify room password and address, then you will be able to levae the room if you want.");
@@ -100,7 +100,7 @@ namespace LongPollingBot
             sb.AppendLine("A: Just ask bot for /help");
             sb.AppendLine(Environment.NewLine);
             sb.AppendLine("*Q: When will I get an address to send the gift?*");
-            sb.AppendLine("A: By default everybody will be shuffled 4th of December, but if you want to change this date - send a message to @Immelstorn");
+            sb.AppendLine("A: By default everybody will be shuffled 4th of December, but if you want to change this date, you can do this with /changedate command. For details read /help");
             sb.AppendLine(Environment.NewLine);
             sb.AppendLine("*Q: I've sent a gift, what now?*");
             sb.AppendLine("A: Great job! Now you should notify your reciever about it. To do it, send a message to the bot: \"/sent _password for the room you've sent you gift in_|_optional message for reciever_\". Please, consider the divider between password and message, it is important. In the message you may specify track number for you gift, or just wich Happy New Year. I recommend to specify your room's name inside the gift, so you reciever will be able to report about recieveing it.");

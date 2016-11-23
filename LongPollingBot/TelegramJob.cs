@@ -2,6 +2,7 @@
 using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 
 using LongPollingBot.Models;
 
@@ -70,7 +71,7 @@ namespace LongPollingBot
                 }
 
                 var updates = _bot.GetUpdatesAsync(offset).Result;
-                foreach (var update in updates)
+                foreach(var update in updates)
                 {
                     ProcessUpdate(update);
 
@@ -120,7 +121,9 @@ namespace LongPollingBot
             {
                 using(var db = new SecretSantaDbContext())
                 {
-                    var santa = db.Santas.FirstOrDefault(s => s.Username == update.Message.From.Username);
+                    var santa = db.Santas.FirstOrDefault(s => s.ChatId == update.Message.Chat.Id) 
+                        ?? db.Santas.FirstOrDefault(s => s.Username == update.Message.From.Username);
+
                     if(santa == null)
                     {
                         NewSanta(update, db);
@@ -204,6 +207,10 @@ namespace LongPollingBot
                         else if (update.Message.Text.StartsWith("/info"))
                         {
                             Info(update, santa, db);
+                        }
+                        else if (update.Message.Text.StartsWith("/participants"))
+                        {
+                            Participants(update, santa, db);
                         }
                         else if(update.Message.Text.StartsWith("/quit"))
                         {
@@ -345,13 +352,13 @@ namespace LongPollingBot
         {
             if (santa.Language == Language.Russian)
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "/help - помощь \n/faq - подробный список вопросов и ответов на них \n/changeaddress - сменить адрес \n/addroom _пароль к комнате_ - добавить комнату \n/myinfo - посмотреть свой адрес и комнаты, в которых ты находишься \n/info _пароль к комнате_ - узнать информацию о комнате \n/changedate _пароль к комнате_|_новая дата_ - сменить дату рассылки адресов в этой комнате. Это может сделать только создатель комнаты. Формат даты: yyyy-mm-dd \n/quit _пароль к комнате_ - выйти из комнаты", parseMode: ParseMode.Markdown).Wait();
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "/help - помощь \n/faq - подробный список вопросов и ответов на них \n/changeaddress - сменить адрес \n/addroom _пароль к комнате_ - добавить комнату \n/myinfo - посмотреть свой адрес и комнаты, в которых ты находишься \n/info _пароль к комнате_ - узнать информацию о комнате \n/participants _пароль к комнате_ - узнать кто находится в комнате \n/changedate _пароль к комнате_|_новая дата_ - сменить дату рассылки адресов в этой комнате. Это может сделать только создатель комнаты. Формат даты: yyyy-mm-dd \n/quit _пароль к комнате_ - выйти из комнаты", parseMode: ParseMode.Markdown).Wait();
                 _bot.SendTextMessageAsync(update.Message.Chat.Id, $"После того как я разошлю адреса, можно будет воспользоваться следующими командами: \n\n/sent _пароль к комнате_|_сообщение для получателя_ - сообщить получателю что подарок в пути, можно добавить сообщение для получателя, например с трек-номером. \n*Обрати внимание на разделитель между паролем к комнате и сообщением* \n\n/recieved _пароль к комнате_ - сообщить Санте что подарок получен \n\nСтоит помнить что эти команды одноразовые и отменить их действие нельзя.", parseMode: ParseMode.Markdown).Wait();
                 _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Если у тебя есть вопросы/пожелания или ты заметил какие-то баги - напиши, пожалуйста, пользователю @Immelstorn").Wait();
             }
             else
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "/help - help \n/faq - frequently asked questions and answers \n/changeaddress - change your address \n/addroom _room password_ - add room \n/myinfo - check your address and rooms which you are in \n/count _room password_ - check room's information \n/changedate _room password_|_new date_ - change date for addresses shuffling. Only room's creator can do this. Date format: yyyy-mm-dd \n/quit _room password_ - leave the room", parseMode: ParseMode.Markdown).Wait();
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "/help - help \n/faq - frequently asked questions and answers \n/changeaddress - change your address \n/addroom _room password_ - add room \n/myinfo - check your address and rooms which you are in \n/info _room password_ - check room's information \n/info _room password_ - see who are in this room \n/changedate _room password_|_new date_ - change date for addresses shuffling. Only room's creator can do this. Date format: yyyy-mm-dd \n/quit _room password_ - leave the room", parseMode: ParseMode.Markdown).Wait();
                 _bot.SendTextMessageAsync(update.Message.Chat.Id, $"When addresses will be sent, you will be able to use next commands:\n\n/sent _room password_|_message for reciever_ - notify your reciever that you sent the gift. You may also add a message, with track number or wish Happy New Year \n*Pay attention to the divider between room password and message. It is imporant.* \n\n/recieved _room password_ - notify your Santa that you've got the gift \n\nYou should now that these commands are one time and you can't undo them.", parseMode: ParseMode.Markdown).Wait();
                 _bot.SendTextMessageAsync(update.Message.Chat.Id, $"If you have any questions/suggestions or you noticed some bugs, please send a message to @Immelstorn").Wait();
             }
@@ -398,15 +405,15 @@ namespace LongPollingBot
                 return;
             }
             var room = db.Rooms.FirstOrDefault(r => r.Password.Equals(password));
-            if (room == null)
+            if (room == null || santa.Gifts.All(g => g.Room.Id != room.Id))
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует, ты можешь добавить ее с помощью комманды /addroom <пароль к комнате>").Wait();
+                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует или у тебя нет к ней доступа, ты можешь добавить ее с помощью комманды /addroom <пароль к комнате>").Wait();
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Such room doesn't exist. You can create it with /addroom <room password>").Wait();
+                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Such room doesn't exist or you do not have access to it. You can create it with /addroom <room password>").Wait();
                 }
                 return;
             }
@@ -422,6 +429,55 @@ namespace LongPollingBot
             {
                 _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Right now it is {count} people here.\nCreator is {creator}.\nDate for addresses sending: {date:yyyy-MM-dd}").Wait();
             }
+        }
+
+        private void Participants(Update update, Santa santa, SecretSantaDbContext db)
+        {
+            var password = update.Message.Text.Replace("/participants ", string.Empty);
+            if (string.IsNullOrEmpty(password) || update.Message.Text.Equals("/participants") || password.Length < 6)
+            {
+                if (santa.Language == Language.Russian)
+                {
+                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.").Wait();
+                }
+                else
+                {
+                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Password should be longer than 5 symbols").Wait();
+                }
+                return;
+            }
+            var room = db.Rooms.FirstOrDefault(r => r.Password.Equals(password));
+            if (room == null || santa.Gifts.All(g => g.Room.Id != room.Id))
+            {
+                if (santa.Language == Language.Russian)
+                {
+                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует или у тебя нет к ней доступа, ты можешь добавить ее с помощью комманды /addroom <пароль к комнате>").Wait();
+                }
+                else
+                {
+                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Such room doesn't exist or you do not have access to it. You can create it with /addroom <room password>").Wait();
+                }
+                return;
+            }
+
+
+            var santas = room.Gifts.Select(g => g.Santa).ToList(); //db.Santas.Where(s => s.Gifts.Any(g => g.Room.Id == room.Id)).ToList();
+            var sb = new StringBuilder();
+            var noUsername = santa.Language == Language.Russian ? "Санта без юзернейма ¯\\_(ツ)_/¯" : "Santa without a username ¯\\_(ツ)_/¯";
+            foreach (var s in santas)
+            {
+                sb.AppendLine($"@{s.Username ?? noUsername}");
+            }
+
+            if (santa.Language == Language.Russian)
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Вот кто сейчас находится в комнате:").Wait();
+            }
+            else
+            {
+                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Here are participants in this room:").Wait();
+            }
+            _bot.SendTextMessageAsync(update.Message.Chat.Id, sb.ToString()).Wait();
         }
 
         private void Quit(Update update, SecretSantaDbContext db, Santa santa)

@@ -607,6 +607,8 @@ namespace LongPollingBot
                 return;
             }
             room.TimeToSend = newDate;
+            room.ReminderSent = false;
+            room.MessagesSent = false;
             db.SaveChanges();
             if (santa.Language == Language.Russian)
             {

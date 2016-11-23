@@ -146,7 +146,18 @@ namespace LongPollingBot
                     }
                     else if(santa.Status == Status.Accepted)
                     {
-                        if(update.Message.Text.StartsWith("/help"))
+                        if(string.IsNullOrEmpty(update.Message.Text))
+                        {
+                            if (santa.Language == Language.Russian)
+                            {
+                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Извини, я не понимаю что ты хочешь сделать, попробуй воспользоваться помощью - /help").Wait();
+                            }
+                            else
+                            {
+                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Sorry, I am not very smart and I don't understand what are you saying, try to use /help").Wait();
+                            }
+                        }
+                        else if (update.Message.Text.StartsWith("/help"))
                         {
                             Help(update, santa);
                         }

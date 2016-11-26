@@ -100,11 +100,11 @@ namespace LongPollingBot
                     {
                         if (gift.Santa.Language == Language.Russian)
                         {
-                            _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Итак, это время пришло. Твой получатель подарка: {gift.Reciever.Address}").Wait();
+                            _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Итак, это время пришло. Твой получатель подарка из комнаты {gift.Room.Password}: {gift.Reciever.Address}").Wait();
                         }
                         else
                         {
-                            _bot.SendTextMessageAsync(gift.Santa.ChatId, $"So, it is time to sent gifts! Your reciever: {gift.Reciever.Address}").Wait();
+                            _bot.SendTextMessageAsync(gift.Santa.ChatId, $"So, it is time to sent gifts! Here is your reciever from the room {gift.Room.Password}: {gift.Reciever.Address}").Wait();
                         }
                     }
                     else
@@ -135,7 +135,12 @@ namespace LongPollingBot
                         santa.ChatId = update.Message.Chat.Id;
                         db.SaveChanges();
                     }
-                    if(santa.Status == Status.WaitingForLanguage)
+                    if (!santa.Username.Equals(update.Message.From.Username))
+                    {
+                        santa.Username = update.Message.From.Username;
+                        db.SaveChanges();
+                    }
+                    if (santa.Status == Status.WaitingForLanguage)
                     {
                         WaitingForLanguage(update, db, santa);
                     }

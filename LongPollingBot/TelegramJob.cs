@@ -121,10 +121,13 @@ namespace LongPollingBot
             {
                 using(var db = new SecretSantaDbContext())
                 {
-                    var santa = db.Santas.FirstOrDefault(s => s.ChatId == update.Message.Chat.Id) 
-                        ?? db.Santas.FirstOrDefault(s => s.Username == update.Message.From.Username);
+                    var santa = db.Santas.FirstOrDefault(s => s.ChatId == update.Message.Chat.Id)
+                        ?? (update.Message.From.Username != null
+                                ? db.Santas.FirstOrDefault(s => s.Username == update.Message.From.Username)
+                                : null);
 
-                    if(santa == null)
+
+                    if (santa == null)
                     {
                         NewSanta(update, db);
                         return;
@@ -253,6 +256,8 @@ namespace LongPollingBot
             }
             catch(Exception e)
             {
+                Trace.TraceError("================================================================");
+                Trace.TraceError($"Update text: {update.Message.Text}, username: {update.Message.From.Username}, chatId: {update.Message.Chat.Id}");
                 Trace.TraceError(e.Message);
                 Trace.TraceError(e.StackTrace);
             }

@@ -7,7 +7,11 @@ namespace LongPollingBot.Models
     {
         public Room()
         {
-            TimeToSend = DateTime.UtcNow < new DateTime(2016, 12, 04) ? new DateTime(2016, 12, 04) : new DateTime(2017, 12, 04);
+            TimeToSend = DateTime.UtcNow < new DateTime(2016, 12, 04)
+                ? new DateTime(2016, 12, 04) :
+                DateTime.UtcNow < new DateTime(2016, 12, 31)
+                    ? new DateTime(2016, 12, 31)
+                    : new DateTime(2017, 12, 04);
         }
         public int Id { get; set; }
         public string Password { get; set; }

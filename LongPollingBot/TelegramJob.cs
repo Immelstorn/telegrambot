@@ -138,7 +138,7 @@ namespace LongPollingBot
                         santa.ChatId = update.Message.Chat.Id;
                         db.SaveChanges();
                     }
-                    if (!santa.Username.Equals(update.Message.From.Username))
+                    if (!string.Equals(santa.Username, update.Message.From.Username))
                     {
                         santa.Username = update.Message.From.Username;
                         db.SaveChanges();
@@ -228,7 +228,7 @@ namespace LongPollingBot
                         {
                             ChangeDate(update, db, santa);
                         }
-                        else if(update.Message.Text.StartsWith("/stat") && update.Message.From.Username.Equals("Immelstorn", StringComparison.InvariantCultureIgnoreCase))
+                        else if(update.Message.Text.StartsWith("/stat") && update.Message.From.Username!= null && update.Message.From.Username.Equals("Immelstorn", StringComparison.InvariantCultureIgnoreCase))
                         {
                             Stat(update, db);
                         }
@@ -592,13 +592,15 @@ namespace LongPollingBot
 
             if(!room.Creator.Id.Equals(santa.Id))
             {
+                var noUsername = santa.Language == Language.Russian ? "Санта без юзернейма ¯\\_(ツ)_/¯" : "Santa without a username ¯\\_(ツ)_/¯";
+
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Только создатель комнаты может менять дату. Создатель: {room.Creator.Username}").Wait();
+                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Только создатель комнаты может менять дату. Создатель: {room.Creator.Username ?? noUsername}").Wait();
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Only creator of the room can change the date. Creator is {room.Creator.Username}").Wait();
+                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Only creator of the room can change the date. Creator is {room.Creator.Username ?? noUsername}").Wait();
                 }
                 return;
             }

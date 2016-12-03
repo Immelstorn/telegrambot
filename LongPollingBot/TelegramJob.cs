@@ -7,6 +7,7 @@ using System.Text;
 using LongPollingBot.Models;
 
 using Quartz;
+using Quartz.Impl;
 
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -21,6 +22,18 @@ namespace LongPollingBot
 
         public void Execute(IJobExecutionContext context)
         {
+            try
+            {
+                RunTask();
+            }
+            finally
+            {
+                ScheduleJob();
+            }
+        }
+
+        private void RunTask()
+        {
             using(var db = new SecretSantaDbContext())
             {
                 var rooms = db.Rooms.ToList();
@@ -28,13 +41,14 @@ namespace LongPollingBot
                 {
                     if(room.TimeToSend.AddDays(-1) < DateTime.UtcNow && !room.ReminderSent)
                     {
+                        Trace.TraceError($"Sending reminders for room {room.Password}");
                         foreach(var gift in room.Gifts)
                         {
                             if(gift.Santa.ChatId != 0)
                             {
                                 if(gift.Santa.Language == Language.Russian)
                                 {
-                                    _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Привет! Ровно через сутки я перемешаю участников в комнате \"{room.Password}\" и разошлю адреса. Пожалуйста, проверь что твой адрес правильный и содержит всю необходимую информацию для того чтобы получить подарок на почте.").Wait();
+                                    _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Привет! Завтра я перемешаю участников в комнате \"{room.Password}\" и разошлю адреса. Пожалуйста, проверь что твой адрес правильный и содержит всю необходимую информацию для того чтобы получить подарок на почте.").Wait();
                                     _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Изменить адрес можно с помощью команды /change").Wait();
                                 }
                                 else
@@ -44,15 +58,18 @@ namespace LongPollingBot
                                 }
                             }
                         }
+                        Trace.TraceError($"Reminders are sent for {room.Password}");
                         room.ReminderSent = true;
                         db.SaveChanges();
                     }
 
-                    if (room.TimeToSend < DateTime.UtcNow && !room.MessagesSent)
+                    if(room.TimeToSend < DateTime.UtcNow && !room.MessagesSent)
                     {
+                        Trace.TraceError($"Sending recievers for room {room.Password}");
                         room.MessagesSent = true;
                         db.SaveChanges();
                         ShuffleAndSend(room);
+                        Trace.TraceError($"Reminders are sent for {room.Password}");
                     }
                 }
 
@@ -66,9 +83,7 @@ namespace LongPollingBot
                     db.SaveChanges();
                 }
                 else
-                {
                     offset = setting.Offset;
-                }
 
                 var updates = _bot.GetUpdatesAsync(offset).Result;
                 foreach(var update in updates)
@@ -80,6 +95,22 @@ namespace LongPollingBot
                 }
             }
         }
+
+        public static void ScheduleJob()
+        {
+            Trace.TraceError($"Scheduling next job");
+
+            var schedulerFactory = new StdSchedulerFactory();
+            var scheduler = schedulerFactory.GetScheduler();
+            scheduler.Start();
+
+            var job = JobBuilder.Create<TelegramJob>().Build();
+
+            var trigger = TriggerBuilder.Create().StartAt(new DateTimeOffset(DateTime.Now.AddSeconds(5))).Build();
+
+            scheduler.ScheduleJob(job, trigger);
+        }
+
         private void ShuffleAndSend(Room room)
         {
             using(var db = new SecretSantaDbContext())

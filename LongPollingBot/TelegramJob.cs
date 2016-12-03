@@ -51,8 +51,8 @@ namespace LongPollingBot
             }
             catch(Exception e)
             {
-                if(!e.Message.Equals("Forbidden: Bot was blocked by the user")
-                        && (e.InnerException == null || !e.InnerException.Message.Equals("Forbidden: Bot was blocked by the user")))
+                if(!e.Message.StartsWith("Forbidden")
+                        && (e.InnerException == null || !e.InnerException.Message.StartsWith("Forbidden")))
                 {
                     throw;
                 }

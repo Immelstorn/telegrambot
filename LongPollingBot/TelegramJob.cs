@@ -125,15 +125,13 @@ namespace LongPollingBot
 
         public static void ScheduleJob()
         {
-            Trace.TraceError($"Scheduling next job");
-
             var schedulerFactory = new StdSchedulerFactory();
             var scheduler = schedulerFactory.GetScheduler();
             scheduler.Start();
 
             var job = JobBuilder.Create<TelegramJob>().Build();
 
-            var trigger = TriggerBuilder.Create().StartAt(new DateTimeOffset(DateTime.Now.AddSeconds(5))).Build();
+            var trigger = TriggerBuilder.Create().StartAt(new DateTimeOffset(DateTime.Now.AddSeconds(2))).Build();
 
             scheduler.ScheduleJob(job, trigger);
         }

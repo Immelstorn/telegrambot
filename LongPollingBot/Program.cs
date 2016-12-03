@@ -7,7 +7,7 @@ namespace LongPollingBot
     {
         static void Main(string[] args)
         {
-//            TelegramJob.ScheduleJob();
+            TelegramJob.ScheduleJob();
         }
     }
 }

@@ -26,9 +26,36 @@ namespace LongPollingBot
             {
                 RunTask();
             }
+            catch(Exception e)
+            {
+                Trace.TraceError("================================================================");
+                Trace.TraceError(e.Message);
+                Trace.TraceError(e.StackTrace);
+                if (e.InnerException != null)
+                {
+                    Trace.TraceError(e.InnerException.Message);
+                    Trace.TraceError(e.InnerException.StackTrace);
+                }
+            }
             finally
             {
                 ScheduleJob();
+            }
+        }
+
+        private void SendMessage(long chatId, string message, ParseMode parseMode = ParseMode.Default)
+        {
+            try
+            {
+                _bot.SendTextMessageAsync(chatId, message, parseMode:parseMode).Wait();
+            }
+            catch(Exception e)
+            {
+                if(!e.Message.Equals("Forbidden: Bot was blocked by the user")
+                        && (e.InnerException == null || !e.InnerException.Message.Equals("Forbidden: Bot was blocked by the user")))
+                {
+                    throw;
+                }
             }
         }
 
@@ -48,13 +75,13 @@ namespace LongPollingBot
                             {
                                 if(gift.Santa.Language == Language.Russian)
                                 {
-                                    _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Привет! Завтра я перемешаю участников в комнате \"{room.Password}\" и разошлю адреса. Пожалуйста, проверь что твой адрес правильный и содержит всю необходимую информацию для того чтобы получить подарок на почте.").Wait();
-                                    _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Изменить адрес можно с помощью команды /change").Wait();
+                                    SendMessage(gift.Santa.ChatId, $"Привет! Завтра я перемешаю участников в комнате \"{room.Password}\" и разошлю адреса. Пожалуйста, проверь что твой адрес правильный и содержит всю необходимую информацию для того чтобы получить подарок на почте.");
+                                    SendMessage(gift.Santa.ChatId, $"Изменить адрес можно с помощью команды /change");
                                 }
                                 else
                                 {
-                                    _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Hi! I am going to shuffle all participants in the room \"{room.Password}\" and send addresses. Please, check that your address contains all information that is needed for receiving your gift at the post office.").Wait();
-                                    _bot.SendTextMessageAsync(gift.Santa.ChatId, $"You can change your address using /change command").Wait();
+                                    SendMessage(gift.Santa.ChatId, $"Hi! I am going to shuffle all participants in the room \"{room.Password}\" and send addresses. Please, check that your address contains all information that is needed for receiving your gift at the post office.");
+                                    SendMessage(gift.Santa.ChatId, $"You can change your address using /change command");
                                 }
                             }
                         }
@@ -131,16 +158,16 @@ namespace LongPollingBot
                     {
                         if (gift.Santa.Language == Language.Russian)
                         {
-                            _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Итак, это время пришло. Твой получатель подарка из комнаты {gift.Room.Password}: {gift.Reciever.Address}").Wait();
+                            SendMessage(gift.Santa.ChatId, $"Итак, это время пришло. Твой получатель подарка из комнаты {gift.Room.Password}: {gift.Reciever.Address}");
                         }
                         else
                         {
-                            _bot.SendTextMessageAsync(gift.Santa.ChatId, $"So, it is time to sent gifts! Here is your reciever from the room {gift.Room.Password}: {gift.Reciever.Address}").Wait();
+                            SendMessage(gift.Santa.ChatId, $"So, it is time to sent gifts! Here is your reciever from the room {gift.Room.Password}: {gift.Reciever.Address}");
                         }
                     }
                     else
                     {
-                        _bot.SendTextMessageAsync(72208686, $"У юзера {gift.Santa.Username} chatId=0. Его получатель: {gift.Reciever.Address}").Wait();
+                        SendMessage(72208686, $"У юзера {gift.Santa.Username} chatId=0. Его получатель: {gift.Reciever.Address}");
                     }
                 }
             }
@@ -192,11 +219,11 @@ namespace LongPollingBot
                         {
                             if (santa.Language == Language.Russian)
                             {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Извини, я не понимаю что ты хочешь сделать, попробуй воспользоваться помощью - /help").Wait();
+                                SendMessage(update.Message.Chat.Id, "Извини, я не понимаю что ты хочешь сделать, попробуй воспользоваться помощью - /help");
                             }
                             else
                             {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Sorry, I am not very smart and I don't understand what are you saying, try to use /help").Wait();
+                                SendMessage(update.Message.Chat.Id, "Sorry, I am not very smart and I don't understand what are you saying, try to use /help");
                             }
                         }
                         else if (update.Message.Text.StartsWith("/help"))
@@ -205,7 +232,7 @@ namespace LongPollingBot
                         }
                         else if(update.Message.Text.StartsWith("/faq"))
                         {
-                            _bot.SendTextMessageAsync(update.Message.Chat.Id, santa.Language == Language.Russian ? Faq.Get() : Faq.GetEnglish(), parseMode: ParseMode.Markdown).Wait();
+                            SendMessage(update.Message.Chat.Id, santa.Language == Language.Russian ? Faq.Get() : Faq.GetEnglish(), ParseMode.Markdown);
                         }
                         else if(update.Message.Text.StartsWith("/changeaddress"))
                         {
@@ -213,11 +240,11 @@ namespace LongPollingBot
                             db.SaveChanges();
                             if(santa.Language == Language.Russian)
                             {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пришли свой новый адрес, на который твой Санта вышлет тебе подарок.").Wait();
+                                SendMessage(update.Message.Chat.Id, "Пришли свой новый адрес, на который твой Санта вышлет тебе подарок.");
                             }
                             else
                             {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Write me your new address, that your Santa will use to send you a gift.").Wait();
+                                SendMessage(update.Message.Chat.Id, "Write me your new address, that your Santa will use to send you a gift.");
                             }
                         }
                         else if(update.Message.Text.StartsWith("/addroom"))
@@ -227,12 +254,12 @@ namespace LongPollingBot
                             {
                                 if(santa.Language == Language.Russian)
                                 {
-                                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.").Wait();
+                                    SendMessage(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.");
 
                                 }
                                 else
                                 {
-                                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Password should be longer the 5 symbols").Wait();
+                                    SendMessage(update.Message.Chat.Id, "Password should be longer the 5 symbols");
                                 }
                                 return;
                             }
@@ -275,11 +302,11 @@ namespace LongPollingBot
                         {
                             if(santa.Language == Language.Russian)
                             {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Извини, я не понимаю что ты хочешь сделать, попробуй воспользоваться помощью - /help").Wait();
+                                SendMessage(update.Message.Chat.Id, "Извини, я не понимаю что ты хочешь сделать, попробуй воспользоваться помощью - /help");
                             }
                             else
                             {
-                                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Sorry, I am not very smart and I don't understand what are you saying, try to use /help").Wait();
+                                SendMessage(update.Message.Chat.Id, "Sorry, I am not very smart and I don't understand what are you saying, try to use /help");
                             }
                         }
                     }
@@ -291,6 +318,11 @@ namespace LongPollingBot
                 Trace.TraceError($"Update text: {update.Message.Text}, username: {update.Message.From.Username}, chatId: {update.Message.Chat.Id}");
                 Trace.TraceError(e.Message);
                 Trace.TraceError(e.StackTrace);
+                if (e.InnerException != null)
+                {
+                    Trace.TraceError(e.InnerException.Message);
+                    Trace.TraceError(e.InnerException.StackTrace);
+                }
             }
         }
 
@@ -301,11 +333,11 @@ namespace LongPollingBot
             {
                 if(santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Не бывает таких коротких адресов. Помни что тебе также надо указать свои ФИО или что там требует почта в твоей стране.").Wait();
+                    SendMessage(update.Message.Chat.Id, "Не бывает таких коротких адресов. Помни что тебе также надо указать свои ФИО или что там требует почта в твоей стране.");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "I don't think it is real address, it is very short. Remember that you have to use your full address with all the stuff that you country's post is require.").Wait();
+                    SendMessage(update.Message.Chat.Id, "I don't think it is real address, it is very short. Remember that you have to use your full address with all the stuff that you country's post is require.");
                 }
                 return;
             }
@@ -314,11 +346,11 @@ namespace LongPollingBot
             db.SaveChanges();
             if(santa.Language == Language.Russian)
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Отлично! Адрес сохранен. Скоро я всех перемешаю и пришлю тебе адрес другого человека, которому ты должен будешь отправить подарок.").Wait();
+                SendMessage(update.Message.Chat.Id, "Отлично! Адрес сохранен. Скоро я всех перемешаю и пришлю тебе адрес другого человека, которому ты должен будешь отправить подарок.");
             }
             else
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Great! You address is saved. Soon I will shuffle participants and send you address of other participant which you will have to sent gift to.").Wait();
+                SendMessage(update.Message.Chat.Id, "Great! You address is saved. Soon I will shuffle participants and send you address of other participant which you will have to sent gift to.");
             }
         }
 
@@ -329,11 +361,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.").Wait();
+                    SendMessage(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Password should be longer than 5 symbols.").Wait();
+                    SendMessage(update.Message.Chat.Id, "Password should be longer than 5 symbols.");
                 }
                 return;
             }
@@ -344,11 +376,11 @@ namespace LongPollingBot
             db.SaveChanges();
             if (santa.Language == Language.Russian)
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пришли свой адрес, на который твой Санта вышлет тебе подарок.").Wait();
+                SendMessage(update.Message.Chat.Id, "Пришли свой адрес, на который твой Санта вышлет тебе подарок.");
             }
             else
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Write me your address, that your Santa will use to send you a gift.").Wait();
+                SendMessage(update.Message.Chat.Id, "Write me your address, that your Santa will use to send you a gift.");
             }
         }
 
@@ -362,14 +394,14 @@ namespace LongPollingBot
             };
             db.Santas.Add(newSanta);
             db.SaveChanges();
-            _bot.SendTextMessageAsync(update.Message.Chat.Id, "Please, choose your language and send me what you have chosen: \nEnglish - /english \nРусский - /russian").Wait();
+            SendMessage(update.Message.Chat.Id, "Please, choose your language and send me what you have chosen: \nEnglish - /english \nРусский - /russian");
         }
 
         private void WaitingForLanguage(Update update, SecretSantaDbContext db, Santa santa)
         {
             if (string.IsNullOrEmpty(update.Message.Text) || !(update.Message.Text.Equals("/russian") || update.Message.Text.Equals("/english")))
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Please, choose your language and send me what you have chosen: \nEnglish - /english \nРусский - /russian").Wait();
+                SendMessage(update.Message.Chat.Id, "Please, choose your language and send me what you have chosen: \nEnglish - /english \nРусский - /russian");
                 return;
             }
             var lang = update.Message.Text.Equals("/english") ? Language.English : Language.Russian;
@@ -379,13 +411,13 @@ namespace LongPollingBot
 
             if (santa.Language == Language.Russian)
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Судя по всему ты тут новенький.\nС принципиами Secret Santa ты, я надеюсь, знаком.\nЗдесь люди объединяются по комнатам с помощью секретного пароля и собираются дарить друг другу подарки.\n").Wait();
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Введи пароль к существующей комнате или новый пароль для создания новой комнаты.").Wait();
+                SendMessage(update.Message.Chat.Id, "Судя по всему ты тут новенький.\nС принципиами Secret Santa ты, я надеюсь, знаком.\nЗдесь люди объединяются по комнатам с помощью секретного пароля и собираются дарить друг другу подарки.\n");
+                SendMessage(update.Message.Chat.Id, "Введи пароль к существующей комнате или новый пароль для создания новой комнаты.");
             }
             else
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Looks like you're new here. \nI hope you know what Secret Santa is. \nPeople are combining by rooms using secret password and they are going to sent gifts to each other anonymously.").Wait();
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Send me the password for the room you want to join, if room with this password doesn't exist it will be created for you.").Wait();
+                SendMessage(update.Message.Chat.Id, "Looks like you're new here. \nI hope you know what Secret Santa is. \nPeople are combining by rooms using secret password and they are going to sent gifts to each other anonymously.");
+                SendMessage(update.Message.Chat.Id, "Send me the password for the room you want to join, if room with this password doesn't exist it will be created for you.");
             }
         }
 
@@ -393,15 +425,15 @@ namespace LongPollingBot
         {
             if (santa.Language == Language.Russian)
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "/help - помощь \n/faq - подробный список вопросов и ответов на них \n/changeaddress - сменить адрес \n/addroom _пароль к комнате_ - добавить комнату \n/myinfo - посмотреть свой адрес и комнаты, в которых ты находишься \n/info _пароль к комнате_ - узнать информацию о комнате \n/participants _пароль к комнате_ - узнать кто находится в комнате \n/changedate _пароль к комнате_|_новая дата_ - сменить дату рассылки адресов в этой комнате. Это может сделать только создатель комнаты. Формат даты: yyyy-mm-dd \n/quit _пароль к комнате_ - выйти из комнаты", parseMode: ParseMode.Markdown).Wait();
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"После того как я разошлю адреса, можно будет воспользоваться следующими командами: \n\n/sent _пароль к комнате_|_сообщение для получателя_ - сообщить получателю что подарок в пути, можно добавить сообщение для получателя, например с трек-номером. \n*Обрати внимание на разделитель между паролем к комнате и сообщением* \n\n/recieved _пароль к комнате_ - сообщить Санте что подарок получен \n\nСтоит помнить что эти команды одноразовые и отменить их действие нельзя.", parseMode: ParseMode.Markdown).Wait();
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Если у тебя есть вопросы/пожелания или ты заметил какие-то баги - напиши, пожалуйста, пользователю @Immelstorn").Wait();
+                SendMessage(update.Message.Chat.Id, "/help - помощь \n/faq - подробный список вопросов и ответов на них \n/changeaddress - сменить адрес \n/addroom _пароль к комнате_ - добавить комнату \n/myinfo - посмотреть свой адрес и комнаты, в которых ты находишься \n/info _пароль к комнате_ - узнать информацию о комнате \n/participants _пароль к комнате_ - узнать кто находится в комнате \n/changedate _пароль к комнате_|_новая дата_ - сменить дату рассылки адресов в этой комнате. Это может сделать только создатель комнаты. Формат даты: yyyy-mm-dd \n/quit _пароль к комнате_ - выйти из комнаты", parseMode: ParseMode.Markdown);
+                SendMessage(update.Message.Chat.Id, $"После того как я разошлю адреса, можно будет воспользоваться следующими командами: \n\n/sent _пароль к комнате_|_сообщение для получателя_ - сообщить получателю что подарок в пути, можно добавить сообщение для получателя, например с трек-номером. \n*Обрати внимание на разделитель между паролем к комнате и сообщением* \n\n/recieved _пароль к комнате_ - сообщить Санте что подарок получен \n\nСтоит помнить что эти команды одноразовые и отменить их действие нельзя.", parseMode: ParseMode.Markdown);
+                SendMessage(update.Message.Chat.Id, $"Если у тебя есть вопросы/пожелания или ты заметил какие-то баги - напиши, пожалуйста, пользователю @Immelstorn");
             }
             else
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "/help - help \n/faq - frequently asked questions and answers \n/changeaddress - change your address \n/addroom _room password_ - add room \n/myinfo - check your address and rooms which you are in \n/info _room password_ - check room's information \n/participants _room password_ - see who are in this room \n/changedate _room password_|_new date_ - change date for addresses shuffling. Only room's creator can do this. Date format: yyyy-mm-dd \n/quit _room password_ - leave the room", parseMode: ParseMode.Markdown).Wait();
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"When addresses will be sent, you will be able to use next commands:\n\n/sent _room password_|_message for reciever_ - notify your reciever that you sent the gift. You may also add a message, with track number or wish Happy New Year \n*Pay attention to the divider between room password and message. It is imporant.* \n\n/recieved _room password_ - notify your Santa that you've got the gift \n\nYou should now that these commands are one time and you can't undo them.", parseMode: ParseMode.Markdown).Wait();
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"If you have any questions/suggestions or you noticed some bugs, please send a message to @Immelstorn").Wait();
+                SendMessage(update.Message.Chat.Id, "/help - help \n/faq - frequently asked questions and answers \n/changeaddress - change your address \n/addroom _room password_ - add room \n/myinfo - check your address and rooms which you are in \n/info _room password_ - check room's information \n/participants _room password_ - see who are in this room \n/changedate _room password_|_new date_ - change date for addresses shuffling. Only room's creator can do this. Date format: yyyy-mm-dd \n/quit _room password_ - leave the room", parseMode: ParseMode.Markdown);
+                SendMessage(update.Message.Chat.Id, $"When addresses will be sent, you will be able to use next commands:\n\n/sent _room password_|_message for reciever_ - notify your reciever that you sent the gift. You may also add a message, with track number or wish Happy New Year \n*Pay attention to the divider between room password and message. It is imporant.* \n\n/recieved _room password_ - notify your Santa that you've got the gift \n\nYou should now that these commands are one time and you can't undo them.", parseMode: ParseMode.Markdown);
+                SendMessage(update.Message.Chat.Id, $"If you have any questions/suggestions or you noticed some bugs, please send a message to @Immelstorn");
             }
         }
 
@@ -409,7 +441,7 @@ namespace LongPollingBot
         {
             var santas = db.Santas.Count();
             var rooms = db.Rooms.Count();
-            _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Santas: {santas}, rooms: {rooms}").Wait();
+            SendMessage(update.Message.Chat.Id, $"Santas: {santas}, rooms: {rooms}");
         }
 
         private void MyInfo(Update update, Santa santa)
@@ -422,11 +454,11 @@ namespace LongPollingBot
             }
             if (santa.Language == Language.Russian)
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Твой текущий адрес: {santa.Address}, твои комнаты: {rooms}").Wait();
+                SendMessage(update.Message.Chat.Id, $"Твой текущий адрес: {santa.Address}, твои комнаты: {rooms}");
             }
             else
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Your current address: {santa.Address}, your rooms: {rooms}").Wait();
+                SendMessage(update.Message.Chat.Id, $"Your current address: {santa.Address}, your rooms: {rooms}");
             }
         }
 
@@ -437,11 +469,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.").Wait();
+                    SendMessage(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Password should be longer than 5 symbols").Wait();
+                    SendMessage(update.Message.Chat.Id, "Password should be longer than 5 symbols");
                 }
                 return;
             }
@@ -450,11 +482,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует или у тебя нет к ней доступа, ты можешь добавить ее с помощью комманды /addroom <пароль к комнате>").Wait();
+                    SendMessage(update.Message.Chat.Id, "Такая комната не существует или у тебя нет к ней доступа, ты можешь добавить ее с помощью комманды /addroom <пароль к комнате>");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Such room doesn't exist or you do not have access to it. You can create it with /addroom <room password>").Wait();
+                    SendMessage(update.Message.Chat.Id, "Such room doesn't exist or you do not have access to it. You can create it with /addroom <room password>");
                 }
                 return;
             }
@@ -464,11 +496,11 @@ namespace LongPollingBot
             var date = room.TimeToSend;
             if (santa.Language == Language.Russian)
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Cейчас тут {count} человек.\nСоздатель: {creator}.\nДата рассылки адресов: {date:yyyy-MM-dd}").Wait();
+                SendMessage(update.Message.Chat.Id, $"Cейчас тут {count} человек.\nСоздатель: {creator}.\nДата рассылки адресов: {date:yyyy-MM-dd}");
             }
             else
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Right now it is {count} people here.\nCreator is {creator}.\nDate for addresses sending: {date:yyyy-MM-dd}").Wait();
+                SendMessage(update.Message.Chat.Id, $"Right now it is {count} people here.\nCreator is {creator}.\nDate for addresses sending: {date:yyyy-MM-dd}");
             }
         }
 
@@ -479,11 +511,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.").Wait();
+                    SendMessage(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Password should be longer than 5 symbols").Wait();
+                    SendMessage(update.Message.Chat.Id, "Password should be longer than 5 symbols");
                 }
                 return;
             }
@@ -492,11 +524,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует или у тебя нет к ней доступа, ты можешь добавить ее с помощью комманды /addroom <пароль к комнате>").Wait();
+                    SendMessage(update.Message.Chat.Id, "Такая комната не существует или у тебя нет к ней доступа, ты можешь добавить ее с помощью комманды /addroom <пароль к комнате>");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Such room doesn't exist or you do not have access to it. You can create it with /addroom <room password>").Wait();
+                    SendMessage(update.Message.Chat.Id, "Such room doesn't exist or you do not have access to it. You can create it with /addroom <room password>");
                 }
                 return;
             }
@@ -512,13 +544,13 @@ namespace LongPollingBot
 
             if (santa.Language == Language.Russian)
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Вот кто сейчас находится в комнате:").Wait();
+                SendMessage(update.Message.Chat.Id, "Вот кто сейчас находится в комнате:");
             }
             else
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Here are participants in this room:").Wait();
+                SendMessage(update.Message.Chat.Id, "Here are participants in this room:");
             }
-            _bot.SendTextMessageAsync(update.Message.Chat.Id, sb.ToString()).Wait();
+            SendMessage(update.Message.Chat.Id, sb.ToString());
         }
 
         private void Quit(Update update, SecretSantaDbContext db, Santa santa)
@@ -528,11 +560,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.").Wait();
+                    SendMessage(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Password should be longer than 5 symbols").Wait();
+                    SendMessage(update.Message.Chat.Id, "Password should be longer than 5 symbols");
                 }
                 return;
             }
@@ -541,11 +573,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует").Wait();
+                    SendMessage(update.Message.Chat.Id, "Такая комната не существует");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Such room doesn't exist").Wait();
+                    SendMessage(update.Message.Chat.Id, "Such room doesn't exist");
                 }
                 return;
             }
@@ -554,11 +586,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Извини, но адреса уже разосланы, ты не можешь покинуть комнату").Wait();
+                    SendMessage(update.Message.Chat.Id, "Извини, но адреса уже разосланы, ты не можешь покинуть комнату");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Sorry, but I've already shuffled people in this room, you can't leave it.").Wait();
+                    SendMessage(update.Message.Chat.Id, "Sorry, but I've already shuffled people in this room, you can't leave it.");
                 }
                 return;
             }
@@ -568,11 +600,11 @@ namespace LongPollingBot
             db.SaveChanges();
             if (santa.Language == Language.Russian)
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Очень жаль. Передумаешь - возвращайся.").Wait();
+                SendMessage(update.Message.Chat.Id, "Очень жаль. Передумаешь - возвращайся.");
             }
             else
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "It's a pity! If you will change your mind - you're welcome!").Wait();
+                SendMessage(update.Message.Chat.Id, "It's a pity! If you will change your mind - you're welcome!");
             }
         }
 
@@ -584,11 +616,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Ты забыл указать пароль к комнате и новую дату!").Wait();
+                    SendMessage(update.Message.Chat.Id, $"Ты забыл указать пароль к комнате и новую дату!");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"You forgot to specify room password and new date!").Wait();
+                    SendMessage(update.Message.Chat.Id, $"You forgot to specify room password and new date!");
                 }
                 return;
             }
@@ -598,11 +630,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.").Wait();
+                    SendMessage(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Password should be longer than 5 symbols").Wait();
+                    SendMessage(update.Message.Chat.Id, "Password should be longer than 5 symbols");
                 }
                 return;
             }
@@ -612,11 +644,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует").Wait();
+                    SendMessage(update.Message.Chat.Id, "Такая комната не существует");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Such room doesn't exist").Wait();
+                    SendMessage(update.Message.Chat.Id, "Such room doesn't exist");
                 }
                 return;
             }
@@ -627,11 +659,11 @@ namespace LongPollingBot
 
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Только создатель комнаты может менять дату. Создатель: {room.Creator.Username ?? noUsername}").Wait();
+                    SendMessage(update.Message.Chat.Id, $"Только создатель комнаты может менять дату. Создатель: {room.Creator.Username ?? noUsername}");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Only creator of the room can change the date. Creator is {room.Creator.Username ?? noUsername}").Wait();
+                    SendMessage(update.Message.Chat.Id, $"Only creator of the room can change the date. Creator is {room.Creator.Username ?? noUsername}");
                 }
                 return;
             }
@@ -641,11 +673,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Дата в неверном формате или в прошлом. Попробуй такой формат: yyyy-mm-dd. Дата должна быть в UTC.").Wait();
+                    SendMessage(update.Message.Chat.Id, $"Дата в неверном формате или в прошлом. Попробуй такой формат: yyyy-mm-dd. Дата должна быть в UTC.");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"The date you have entered is invalid or in the past. Try this format: yyyy-mm-dd. Date should be in UTC.").Wait();
+                    SendMessage(update.Message.Chat.Id, $"The date you have entered is invalid or in the past. Try this format: yyyy-mm-dd. Date should be in UTC.");
                 }
                 return;
             }
@@ -655,11 +687,11 @@ namespace LongPollingBot
             db.SaveChanges();
             if (santa.Language == Language.Russian)
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Готово. Новая дата: {newDate:yyyy-MM-dd}").Wait();
+                SendMessage(update.Message.Chat.Id, $"Готово. Новая дата: {newDate:yyyy-MM-dd}");
             }
             else
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"It's done. New date is {newDate:yyyy-MM-dd}").Wait();
+                SendMessage(update.Message.Chat.Id, $"It's done. New date is {newDate:yyyy-MM-dd}");
             }
         }
 
@@ -671,11 +703,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Ты забыл указать пароль к комнате и сообщение для получателя!").Wait();
+                    SendMessage(update.Message.Chat.Id, $"Ты забыл указать пароль к комнате и сообщение для получателя!");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"You forgot to specify room password and/or message for reciever!").Wait();
+                    SendMessage(update.Message.Chat.Id, $"You forgot to specify room password and/or message for reciever!");
                 }
                 return;
             }
@@ -686,11 +718,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует").Wait();
+                    SendMessage(update.Message.Chat.Id, "Такая комната не существует");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Such room doesn't exist").Wait();
+                    SendMessage(update.Message.Chat.Id, "Such room doesn't exist");
                 }
                 return;
             }
@@ -699,11 +731,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Я еще не рассылал адреса по этой комнате, о чем ты собрался отчитываться?").Wait();
+                    SendMessage(update.Message.Chat.Id, "Я еще не рассылал адреса по этой комнате, о чем ты собрался отчитываться?");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "I didn't sent any addresses in this room yet, what are you going to report about?").Wait();
+                    SendMessage(update.Message.Chat.Id, "I didn't sent any addresses in this room yet, what are you going to report about?");
                 }
                 return;
             }
@@ -714,11 +746,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Ты уже отчитывался ранее об отправке этого подарка, спасибо!").Wait();
+                    SendMessage(update.Message.Chat.Id, "Ты уже отчитывался ранее об отправке этого подарка, спасибо!");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "You have alreade reported about sending of this gift, thanks!").Wait();
+                    SendMessage(update.Message.Chat.Id, "You have alreade reported about sending of this gift, thanks!");
                 }
                 return;
             }
@@ -733,24 +765,24 @@ namespace LongPollingBot
             db.SaveChanges();
             if (santa.Language == Language.Russian)
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Спасибо! Я немедленно передам эту радостную новость получателю! С Новым годом!").Wait();
-                _bot.SendTextMessageAsync(gift.Reciever.ChatId, $"Ура! Тебе отправили подарок из комнаты \"{gift.Room.Password}\"! Начинайте ждать и уважать почту! С Новым годом!").Wait();
+                SendMessage(update.Message.Chat.Id, "Спасибо! Я немедленно передам эту радостную новость получателю! С Новым годом!");
+                SendMessage(gift.Reciever.ChatId, $"Ура! Тебе отправили подарок из комнаты \"{gift.Room.Password}\"! Начинайте ждать и уважать почту! С Новым годом!");
             }
             else
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Thanks! I will notify reciever immediately! Happy New Year!").Wait();
-                _bot.SendTextMessageAsync(gift.Reciever.ChatId, $"Yay! Your gift from the room \"{gift.Room.Password}\" was sent! You should start to wait and pay respect to the post service. Happy New Year!").Wait();
+                SendMessage(update.Message.Chat.Id, "Thanks! I will notify reciever immediately! Happy New Year!");
+                SendMessage(gift.Reciever.ChatId, $"Yay! Your gift from the room \"{gift.Room.Password}\" was sent! You should start to wait and pay respect to the post service. Happy New Year!");
             }
 
             if (!string.IsNullOrEmpty(gift.MessageFromSanta))
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(gift.Reciever.ChatId, $"Твой Санта также оставил для тебе сообщение. Вот оно: {gift.MessageFromSanta}").Wait();
+                    SendMessage(gift.Reciever.ChatId, $"Твой Санта также оставил для тебе сообщение. Вот оно: {gift.MessageFromSanta}");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(gift.Reciever.ChatId, $"Your Santa also left a message for you. Here it is: {gift.MessageFromSanta}").Wait();
+                    SendMessage(gift.Reciever.ChatId, $"Your Santa also left a message for you. Here it is: {gift.MessageFromSanta}");
                 }
             }
         }
@@ -765,11 +797,11 @@ namespace LongPollingBot
                 {
                     if (santa.Language == Language.Russian)
                     {
-                        _bot.SendTextMessageAsync(update.Message.Chat.Id, "Ты состоишь более чем в одной комнате, укажи пароль к комнате из которой ты получил подарок. Если ты не знаешь точно - что ж, ты не сможешь сообщить о получении. Помни, что пароль должен быть длиннее 5 символов.").Wait();
+                        SendMessage(update.Message.Chat.Id, "Ты состоишь более чем в одной комнате, укажи пароль к комнате из которой ты получил подарок. Если ты не знаешь точно - что ж, ты не сможешь сообщить о получении. Помни, что пароль должен быть длиннее 5 символов.");
                     }
                     else
                     {
-                        _bot.SendTextMessageAsync(update.Message.Chat.Id, "You are in more the one room, please, specify a room password for a room that you get your gift from. If you're not sure, well, you will not be able to report about this gift, unfortunately. Remember, that a password should be longer then 5 symbols.").Wait();
+                        SendMessage(update.Message.Chat.Id, "You are in more the one room, please, specify a room password for a room that you get your gift from. If you're not sure, well, you will not be able to report about this gift, unfortunately. Remember, that a password should be longer then 5 symbols.");
                     }
                     return;
                 }
@@ -788,11 +820,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Такая комната не существует").Wait();
+                    SendMessage(update.Message.Chat.Id, "Такая комната не существует");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Such room doesn't exist").Wait();
+                    SendMessage(update.Message.Chat.Id, "Such room doesn't exist");
                 }
                 return;
             }
@@ -800,11 +832,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Я еще не рассылал адреса по этой комнате, о чем ты собрался отчитываться?").Wait();
+                    SendMessage(update.Message.Chat.Id, "Я еще не рассылал адреса по этой комнате, о чем ты собрался отчитываться?");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "I didn't sent any addresses in this room yet, what are you going to report about?").Wait();
+                    SendMessage(update.Message.Chat.Id, "I didn't sent any addresses in this room yet, what are you going to report about?");
                 }
                 return;
             }
@@ -814,11 +846,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Ты уже отчитывался ранее о получении этого подарка, спасибо!").Wait();
+                    SendMessage(update.Message.Chat.Id, "Ты уже отчитывался ранее о получении этого подарка, спасибо!");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "You have alreade reported about recieving this gift, thanks!").Wait();
+                    SendMessage(update.Message.Chat.Id, "You have alreade reported about recieving this gift, thanks!");
                 }
                 return;
             }
@@ -827,11 +859,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Санта не указал что он отправил подарок, ты не можешь подтвердить его получение.").Wait();
+                    SendMessage(update.Message.Chat.Id, "Санта не указал что он отправил подарок, ты не можешь подтвердить его получение.");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, "Santa still didn't marked that gift as sent, so you can't mark it as recieved.").Wait();
+                    SendMessage(update.Message.Chat.Id, "Santa still didn't marked that gift as sent, so you can't mark it as recieved.");
                 }
                 return;
             }
@@ -841,13 +873,13 @@ namespace LongPollingBot
             db.SaveChanges();
             if (santa.Language == Language.Russian)
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Ура! Я немедленно передам эту радостную новость твоему Санте! С Новым годом!").Wait();
-                _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Миссия выполнена! Твой подарок благополучно дошел получателю из комнаты \"{gift.Room.Password}\"!").Wait();
+                SendMessage(update.Message.Chat.Id, "Ура! Я немедленно передам эту радостную новость твоему Санте! С Новым годом!");
+                SendMessage(gift.Santa.ChatId, $"Миссия выполнена! Твой подарок благополучно дошел получателю из комнаты \"{gift.Room.Password}\"!");
             }
             else
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, "Yay! I will notify your Santa immediately! Happy new Year!").Wait();
-                _bot.SendTextMessageAsync(gift.Santa.ChatId, $"Mission accomplished! Your gift for the room \"{gift.Room.Password}\" was successfully recieved!").Wait();
+                SendMessage(update.Message.Chat.Id, "Yay! I will notify your Santa immediately! Happy new Year!");
+                SendMessage(gift.Santa.ChatId, $"Mission accomplished! Your gift for the room \"{gift.Room.Password}\" was successfully recieved!");
             }
         }
 
@@ -868,11 +900,11 @@ namespace LongPollingBot
                 db.SaveChanges();
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Новая комната создана. Раздача адресов назначена на {gift.Room.TimeToSend:yyyy-MM-dd}. Приглашай друзей с помощью пароля для комнаты.").Wait();
+                    SendMessage(update.Message.Chat.Id, $"Новая комната создана. Раздача адресов назначена на {gift.Room.TimeToSend:yyyy-MM-dd}. Приглашай друзей с помощью пароля для комнаты.");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"New room is created. Shuffling and addresses sending are scheduled to {gift.Room.TimeToSend:yyyy-MM-dd}. Invite your friends using this room's password.").Wait();
+                    SendMessage(update.Message.Chat.Id, $"New room is created. Shuffling and addresses sending are scheduled to {gift.Room.TimeToSend:yyyy-MM-dd}. Invite your friends using this room's password.");
                 }
                 return;
             }
@@ -881,11 +913,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Извини, но в этой комнате уже обменялись адресами и вход для новых людей закрыт. Попробуй создать новую комнату.").Wait();
+                    SendMessage(update.Message.Chat.Id, $"Извини, но в этой комнате уже обменялись адресами и вход для новых людей закрыт. Попробуй создать новую комнату.");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Sorry, but people in this room was already shuffled, you can't join. You can create a new room, though.").Wait();
+                    SendMessage(update.Message.Chat.Id, $"Sorry, but people in this room was already shuffled, you can't join. You can create a new room, though.");
                 }
                 return;
             }
@@ -895,11 +927,11 @@ namespace LongPollingBot
             {
                 if (santa.Language == Language.Russian)
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Ты уже добавлен в эту комнату, сейчас тут {count} человек.").Wait();
+                    SendMessage(update.Message.Chat.Id, $"Ты уже добавлен в эту комнату, сейчас тут {count} человек.");
                 }
                 else
                 {
-                    _bot.SendTextMessageAsync(update.Message.Chat.Id, $"You are already in this room. It is {count} people here right now.").Wait();
+                    SendMessage(update.Message.Chat.Id, $"You are already in this room. It is {count} people here right now.");
                 }
                 return;
             }
@@ -913,11 +945,11 @@ namespace LongPollingBot
             db.SaveChanges();
             if (santa.Language == Language.Russian)
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"Ты добавлен в эту комнату, сейчас тут {++count} человек.").Wait();
+                SendMessage(update.Message.Chat.Id, $"Ты добавлен в эту комнату, сейчас тут {++count} человек.");
             }
             else
             {
-                _bot.SendTextMessageAsync(update.Message.Chat.Id, $"You've been added to this room, it is {++count} people here right now.").Wait();
+                SendMessage(update.Message.Chat.Id, $"You've been added to this room, it is {++count} people here right now.");
             }
         }
     }

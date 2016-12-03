@@ -76,12 +76,12 @@ namespace LongPollingBot
                                 if(gift.Santa.Language == Language.Russian)
                                 {
                                     SendMessage(gift.Santa.ChatId, $"Привет! Завтра я перемешаю участников в комнате \"{room.Password}\" и разошлю адреса. Пожалуйста, проверь что твой адрес правильный и содержит всю необходимую информацию для того чтобы получить подарок на почте.");
-                                    SendMessage(gift.Santa.ChatId, $"Изменить адрес можно с помощью команды /change");
+                                    SendMessage(gift.Santa.ChatId, $"Изменить адрес можно с помощью команды /changeaddress");
                                 }
                                 else
                                 {
                                     SendMessage(gift.Santa.ChatId, $"Hi! I am going to shuffle all participants in the room \"{room.Password}\" and send addresses. Please, check that your address contains all information that is needed for receiving your gift at the post office.");
-                                    SendMessage(gift.Santa.ChatId, $"You can change your address using /change command");
+                                    SendMessage(gift.Santa.ChatId, $"You can change your address using /changeaddress command");
                                 }
                             }
                         }

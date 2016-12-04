@@ -154,14 +154,9 @@ namespace LongPollingBot
                 {
                     if(gift.Santa.ChatId != 0)
                     {
-                        if (gift.Santa.Language == Language.Russian)
-                        {
-                            SendMessage(gift.Santa.ChatId, $"Итак, это время пришло. Твой получатель подарка из комнаты {gift.Room.Password}: {gift.Reciever.Address}");
-                        }
-                        else
-                        {
-                            SendMessage(gift.Santa.ChatId, $"So, it is time to sent gifts! Here is your reciever from the room {gift.Room.Password}: {gift.Reciever.Address}");
-                        }
+                        SendMessage(gift.Santa.ChatId, gift.Santa.Language == Language.Russian 
+                            ? $"Итак, это время пришло. Твой получатель подарка из комнаты {gift.Room.Password}: {gift.Reciever.Address}" 
+                            : $"So, it is time to sent gifts! Here is your reciever from the room {gift.Room.Password}: {gift.Reciever.Address}");
                     }
                     else
                     {
@@ -215,14 +210,9 @@ namespace LongPollingBot
                     {
                         if(string.IsNullOrEmpty(update.Message.Text))
                         {
-                            if (santa.Language == Language.Russian)
-                            {
-                                SendMessage(update.Message.Chat.Id, "Извини, я не понимаю что ты хочешь сделать, попробуй воспользоваться помощью - /help");
-                            }
-                            else
-                            {
-                                SendMessage(update.Message.Chat.Id, "Sorry, I am not very smart and I don't understand what are you saying, try to use /help");
-                            }
+                            SendMessage(update.Message.Chat.Id, santa.Language == Language.Russian 
+                                ? "Извини, я не понимаю что ты хочешь сделать, попробуй воспользоваться помощью - /help" 
+                                : "Sorry, I am not very smart and I don't understand what are you saying, try to use /help");
                         }
                         else if (update.Message.Text.StartsWith("/help"))
                         {
@@ -236,29 +226,22 @@ namespace LongPollingBot
                         {
                             santa.Status = Status.WaitingForAddress;
                             db.SaveChanges();
-                            if(santa.Language == Language.Russian)
-                            {
-                                SendMessage(update.Message.Chat.Id, "Пришли свой новый адрес, на который твой Санта вышлет тебе подарок.");
-                            }
-                            else
-                            {
-                                SendMessage(update.Message.Chat.Id, "Write me your new address, that your Santa will use to send you a gift.");
-                            }
+                            SendMessage(update.Message.Chat.Id, santa.Language == Language.Russian 
+                                ? "Пришли свой новый адрес, на который твой Санта вышлет тебе подарок." 
+                                : "Write me your new address, that your Santa will use to send you a gift.");
+
+                            SendMessage(update.Message.Chat.Id, santa.Language == Language.Russian 
+                                ? "Помни что в адресе надо указать свои ФИО и все что требует почта в твоей стране." 
+                                : "Remember that you have to use your full address with all the stuff that you country's post is require.");
                         }
                         else if(update.Message.Text.StartsWith("/addroom"))
                         {
                             var password = update.Message.Text.Replace("/addroom ", string.Empty);
                             if(string.IsNullOrEmpty(password) || update.Message.Text.Equals("/addroom") || password.Length < 6)
                             {
-                                if(santa.Language == Language.Russian)
-                                {
-                                    SendMessage(update.Message.Chat.Id, "Пароль должен быть длиннее 5 символов.");
-
-                                }
-                                else
-                                {
-                                    SendMessage(update.Message.Chat.Id, "Password should be longer the 5 symbols");
-                                }
+                                SendMessage(update.Message.Chat.Id, santa.Language == Language.Russian 
+                                    ? "Пароль должен быть длиннее 5 символов." 
+                                    : "Password should be longer then 5 symbols");
                                 return;
                             }
 
@@ -298,14 +281,9 @@ namespace LongPollingBot
                         }
                         else
                         {
-                            if(santa.Language == Language.Russian)
-                            {
-                                SendMessage(update.Message.Chat.Id, "Извини, я не понимаю что ты хочешь сделать, попробуй воспользоваться помощью - /help");
-                            }
-                            else
-                            {
-                                SendMessage(update.Message.Chat.Id, "Sorry, I am not very smart and I don't understand what are you saying, try to use /help");
-                            }
+                            SendMessage(update.Message.Chat.Id, santa.Language == Language.Russian 
+                                ? "Извини, я не понимаю что ты хочешь сделать, попробуй воспользоваться помощью - /help" 
+                                : "Sorry, I am not very smart and I don't understand what are you saying, try to use /help");
                         }
                     }
                 }
@@ -329,27 +307,17 @@ namespace LongPollingBot
             var address = update.Message.Text;
             if(string.IsNullOrEmpty(address) || address.Length < 10)
             {
-                if(santa.Language == Language.Russian)
-                {
-                    SendMessage(update.Message.Chat.Id, "Не бывает таких коротких адресов. Помни что тебе также надо указать свои ФИО или что там требует почта в твоей стране.");
-                }
-                else
-                {
-                    SendMessage(update.Message.Chat.Id, "I don't think it is real address, it is very short. Remember that you have to use your full address with all the stuff that you country's post is require.");
-                }
+                SendMessage(update.Message.Chat.Id, santa.Language == Language.Russian 
+                    ? "Не бывает таких коротких адресов. Помни что тебе также надо указать свои ФИО или что там требует почта в твоей стране." 
+                    : "I don't think it is real address, it is very short. Remember that you have to use your full address with all the stuff that you country's post is require.");
                 return;
             }
             santa.Address = address;
             santa.Status = Status.Accepted;
             db.SaveChanges();
-            if(santa.Language == Language.Russian)
-            {
-                SendMessage(update.Message.Chat.Id, "Отлично! Адрес сохранен. Скоро я всех перемешаю и пришлю тебе адрес другого человека, которому ты должен будешь отправить подарок.");
-            }
-            else
-            {
-                SendMessage(update.Message.Chat.Id, "Great! You address is saved. Soon I will shuffle participants and send you address of other participant which you will have to sent gift to.");
-            }
+            SendMessage(update.Message.Chat.Id, santa.Language == Language.Russian 
+                ? "Отлично! Адрес сохранен. Скоро я всех перемешаю и пришлю тебе адрес другого человека, которому ты должен будешь отправить подарок." 
+                : "Great! You address is saved. Soon I will shuffle participants and send you address of other participant which you will have to sent gift to.");
         }
 
         private void WaitingForPassword(Update update, SecretSantaDbContext db, Santa santa)

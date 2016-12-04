@@ -115,7 +115,10 @@ namespace LongPollingBot
                 var updates = _bot.GetUpdatesAsync(offset).Result;
                 foreach(var update in updates)
                 {
-                    ProcessUpdate(update);
+                    if(update.Type == UpdateType.MessageUpdate)
+                    {
+                        ProcessUpdate(update);
+                    }
 
                     db.Settings.First().Offset = update.Id + 1;
                     db.SaveChanges();
@@ -316,8 +319,7 @@ namespace LongPollingBot
             santa.Status = Status.Accepted;
             db.SaveChanges();
             SendMessage(update.Message.Chat.Id, santa.Language == Language.Russian 
-                ? "Отлично! Адрес сохранен. Скоро я всех перемешаю и пришлю тебе адрес другого человека, которому ты должен будешь отправить подарок." 
-                : "Great! You address is saved. Soon I will shuffle participants and send you address of other participant which you will have to sent gift to.");
+                ? "Отлично! Адрес сохранен. Скоро я всех перемешаю и пришлю тебе адрес другого человека, которому ты должен будешь отправить подарок." : "Great! You address is saved. Soon I will shuffle participants and send you address of other participant which you will have to sent gift to.");
         }
 
         private void WaitingForPassword(Update update, SecretSantaDbContext db, Santa santa)
